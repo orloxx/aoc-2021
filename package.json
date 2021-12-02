@@ -1,0 +1,24 @@
+{
+  "name": "@orloxx/aoc-2021",
+  "version": "1.0.0",
+  "description": "Advent of Code 2021",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "run:1": "node ./1/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orloxx/aoc-2021.git"
+  },
+  "keywords": [
+    "challenge",
+    "x-mas"
+  ],
+  "author": "Iker Garitaonandia",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/orloxx/aoc-2021/issues"
+  },
+  "homepage": "https://adventofcode.com/2021"
+}
