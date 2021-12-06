@@ -85,3 +85,17 @@ import assert from 'assert';
   };
   assert.deepEqual(['1', '2', '3'].toNumber(), [1, 2, 3]);
 })();
+
+(function() {
+  Array.prototype.flat2DMatrix = function () {
+    return [].concat.apply([], this);
+  };
+})();
+
+(function() {
+  Array.prototype.nMatrix = function (n) {
+    return Array.from({
+      length: n
+    }, () => new Array(n).fill(0));
+  };
+})();
