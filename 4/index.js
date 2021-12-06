@@ -1,3 +1,4 @@
+import assert from 'assert';
 import read from '../utils/read.js';
 
 /**
@@ -113,12 +114,15 @@ function solution02(list) {
   const winnerBall = bingoBalls[i - 1];
   const unmarkSum = sumUnmarked(winnerBoard);
 
-  console.log(winnerBall, unmarkSum);
-
   return unmarkSum * winnerBall;
 }
 
+read('./4/test.txt').then((list) => {
+  assert.deepEqual(solution01(list), 4512);
+  assert.deepEqual(solution02(list), 1924);
+});
+
 read('./4/input.txt').then((list) => {
-  console.log(solution01(list));
-  console.log(solution02(list));
+  assert.deepEqual(solution01(list), 25023);
+  assert.deepEqual(solution02(list), 2634);
 });

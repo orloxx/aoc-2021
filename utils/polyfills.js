@@ -90,12 +90,17 @@ import assert from 'assert';
   Array.prototype.flat2DMatrix = function () {
     return [].concat.apply([], this);
   };
+  const data = [[1, 2, 3], [4, 5], [6, 7]];
+  const result = [1, 2, 3, 4, 5, 6, 7];
+  assert.deepEqual(data.flat2DMatrix(), result);
 })();
 
 (function() {
-  Array.prototype.nMatrix = function (n) {
+  Array.prototype.n2DMatrix = function (n, fill = 0) {
     return Array.from({
       length: n
-    }, () => new Array(n).fill(0));
+    }, () => new Array(n).fill(fill));
   };
+  assert.deepEqual([].n2DMatrix(2), [[0, 0], [0, 0]]);
+  assert.deepEqual([].n2DMatrix(2, 'n'), [['n', 'n'], ['n', 'n']]);
 })();

@@ -1,3 +1,4 @@
+import assert from 'assert';
 import read from '../utils/read.js';
 
 function solution01(list) {
@@ -25,7 +26,12 @@ function solution02(list) {
   }, { count: 0, previous: Infinity }).count;
 }
 
-read('./1/input.txt').then((result) => {
-  console.log(solution01(result));
-  console.log(solution02(result));
+read('./1/test.txt').then((list) => {
+  assert.deepEqual(solution01(list), 7);
+  assert.deepEqual(solution02(list), 5);
+});
+
+read('./1/input.txt').then((list) => {
+  assert.deepEqual(solution01(list), 1215);
+  assert.deepEqual(solution02(list), 1150);
 });

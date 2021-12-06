@@ -1,3 +1,4 @@
+import assert from 'assert';
 import read from '../utils/read.js';
 
 function plotVertical(matrix, y1, y2, x) {
@@ -79,7 +80,7 @@ function getPlots(list, { size = 1000, d } = {}) {
     }
 
     return prev;
-  }, [].nMatrix(size));
+  }, [].n2DMatrix(size));
 }
 
 function solution01(list) {
@@ -92,7 +93,12 @@ function solution02(list) {
   return plots.flat2DMatrix().filter((n) => n > 1).length;
 }
 
+read('./5/test.txt').then((list) => {
+  assert.deepEqual(solution01(list), 5);
+  assert.deepEqual(solution02(list), 12);
+});
+
 read('./5/input.txt').then((list) => {
-  console.log(solution01(list));
-  console.log(solution02(list));
+  assert.deepEqual(solution01(list), 5690);
+  assert.deepEqual(solution02(list), 17741);
 });

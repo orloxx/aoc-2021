@@ -1,3 +1,4 @@
+import assert from 'assert';
 import read from '../utils/read.js';
 
 function getZeroesAndOnes(list) {
@@ -46,7 +47,12 @@ function solution02(list) {
   return parseInt(oxygen, 2) * parseInt(co2, 2);
 }
 
+read('./3/test.txt').then((list) => {
+  assert.deepEqual(solution01(list), 198);
+  assert.deepEqual(solution02(list), 230);
+});
+
 read('./3/input.txt').then((list) => {
-  console.log(solution01(list));
-  console.log(solution02(list));
+  assert.deepEqual(solution01(list), 3882564);
+  assert.deepEqual(solution02(list), 3385170);
 });
