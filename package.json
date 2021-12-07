@@ -10,7 +10,8 @@
     "day:3": "node ./3/index.js",
     "day:4": "node ./4/index.js",
     "day:5": "node ./5/index.js",
-    "day:6": "node ./6/index.js"
+    "day:6": "node ./6/index.js",
+    "day:7": "node ./7/index.js"
   },
   "repository": {
     "type": "git",

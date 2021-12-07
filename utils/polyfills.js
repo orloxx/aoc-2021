@@ -96,6 +96,14 @@ import assert from 'assert';
 })();
 
 (function() {
+  Array.prototype.nMatrix = function (n, fill = 0) {
+    return [...Array(n).keys()].fill(fill);
+  };
+  assert.deepEqual([].nMatrix(2), [0, 0]);
+  assert.deepEqual([].nMatrix(2, 'n'), ['n', 'n']);
+})();
+
+(function() {
   Array.prototype.n2DMatrix = function (n, fill = 0) {
     return Array.from({
       length: n
