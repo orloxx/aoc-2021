@@ -11,7 +11,8 @@
     "day:4": "node ./4/index.js",
     "day:5": "node ./5/index.js",
     "day:6": "node ./6/index.js",
-    "day:7": "node ./7/index.js"
+    "day:7": "node ./7/index.js",
+    "day:8": "node ./8/index.js"
   },
   "repository": {
     "type": "git",
@@ -26,5 +27,8 @@
   "bugs": {
     "url": "https://github.com/orloxx/aoc-2021/issues"
   },
-  "homepage": "https://adventofcode.com/2021"
+  "homepage": "https://adventofcode.com/2021",
+  "engines": {
+    "node": "~16.13.1"
+  }
 }
