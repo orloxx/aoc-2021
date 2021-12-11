@@ -1,15 +1,13 @@
 import assert from 'assert';
 import read from '../utils/read.js';
 
+const COORDINATE_MAP = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+
 function isLowest(n, list, i, j) {
-  // check up
-  return (!list[i - 1] || n < list[i - 1][j]) &&
-    // check right
-    (!list[i][j + 1] || n < list[i][j + 1]) &&
-    // check down
-    (!list[i + 1] || n < list[i + 1][j]) &&
-    // check left
-    (!list[i][j - 1] || n < list[i][j - 1]);
+  return COORDINATE_MAP.every(([k, l]) => {
+    const elem = list[i + k] && list[i + k][j + l];
+    return !elem || n < elem;
+  });
 }
 
 function getLowestCoordinates(list) {
@@ -41,18 +39,11 @@ function getBasins(list, start, prev = []) {
 
   let basins = [...prev, start];
 
-  // check up
-  if (list[i - 1] && list[i - 1][j] !== '9' && !alreadyChecked(i - 1, j))
-    basins = getBasins(list, [i - 1, j], basins);
-  // check right
-  if (list[i][j + 1] && list[i][j + 1] !== '9' && !alreadyChecked(i, j + 1))
-    basins = getBasins(list, [i, j + 1], basins);
-  // check down
-  if (list[i + 1] && list[i + 1][j] !== '9' && !alreadyChecked(i + 1, j))
-    basins = getBasins(list, [i + 1, j], basins);
-  // check left
-  if (list[i][j - 1] && list[i][j - 1] !== '9' && !alreadyChecked(i, j - 1))
-    basins = getBasins(list, [i, j - 1], basins);
+  COORDINATE_MAP.forEach(([k, l]) => {
+    const elem = list[i + k] && list[i + k][j + l];
+    if (elem && elem !== '9' && !alreadyChecked(i + k, j + l))
+      basins = getBasins(list, [i + k, j + l], basins);
+  });
 
   return basins;
 }
