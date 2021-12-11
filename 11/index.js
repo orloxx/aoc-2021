@@ -24,11 +24,12 @@ function flashAdjacent(list, start, counter) {
   }
 }
 
-function flashAll(list, stop = 100) {
+function flashAll(list, stop) {
   let numberList = list.map((line) => [...line].toNumber());
   const counter = { count: 0, allFlashing: -1 };
+  let t = 0;
 
-  for (let x = 0; x < stop; x++) {
+  while(stop ? t < stop : counter.allFlashing < 0) {
     numberList.forEach((row, i) => {
       row.forEach((n, j) => {
         flashAdjacent(numberList, [i, j], counter);
@@ -37,19 +38,20 @@ function flashAll(list, stop = 100) {
     numberList = numberList.map((row) => row.map((n) => n > 9 ? 0 : n));
 
     if (counter.allFlashing === -1 && numberList.every((row) => row.every((n) => n === 0))) {
-      counter.allFlashing = x + 1;
+      counter.allFlashing = t + 1;
     }
+    t++;
   }
 
   return counter;
 }
 
 function solution01(list) {
-  return flashAll(list).count;
+  return flashAll(list, 100).count;
 }
 
 function solution02(list) {
-  return flashAll(list, 300).allFlashing;
+  return flashAll(list).allFlashing;
 }
 
 read('./11/test.txt').then((list) => {
