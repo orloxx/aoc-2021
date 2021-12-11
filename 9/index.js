@@ -1,10 +1,10 @@
 import assert from 'assert';
 import read from '../utils/read.js';
 
-const COORDINATE_MAP = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+const DIRECTION = [[-1, 0], [1, 0], [0, -1], [0, 1]];
 
 function isLowest(n, list, i, j) {
-  return COORDINATE_MAP.every(([k, l]) => {
+  return DIRECTION.every(([k, l]) => {
     const elem = list[i + k] && list[i + k][j + l];
     return !elem || n < elem;
   });
@@ -39,7 +39,7 @@ function getBasins(list, start, prev = []) {
 
   let basins = [...prev, start];
 
-  COORDINATE_MAP.forEach(([k, l]) => {
+  DIRECTION.forEach(([k, l]) => {
     const elem = list[i + k] && list[i + k][j + l];
     if (elem && elem !== '9' && !alreadyChecked(i + k, j + l))
       basins = getBasins(list, [i + k, j + l], basins);

@@ -16,6 +16,7 @@
     "day:8": "node ./8/index.js",
     "day:9": "node ./9/index.js",
     "day:10": "node ./10/index.js",
+    "day:11": "node ./11/index.js",
     "day:fin": "echo 'all is good!'"
   },
   "repository": {
