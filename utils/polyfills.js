@@ -104,11 +104,29 @@ import assert from 'assert';
 })();
 
 (function() {
-  Array.prototype.n2DMatrix = function (n, fill = 0) {
+  Array.prototype.nm2DMatrix = function (n, m = n, fill = 0) {
     return Array.from({
-      length: n
+      length: m
     }, () => new Array(n).fill(fill));
+  };
+  assert.deepEqual([].nm2DMatrix(2, 3), [[0, 0], [0, 0], [0, 0]]);
+  assert.deepEqual([].nm2DMatrix(2, 1, 'n'), [['n', 'n']]);
+})();
+
+(function() {
+  Array.prototype.n2DMatrix = function (n, fill = 0) {
+    return this.nm2DMatrix(n, n, fill);
   };
   assert.deepEqual([].n2DMatrix(2), [[0, 0], [0, 0]]);
   assert.deepEqual([].n2DMatrix(2, 'n'), [['n', 'n'], ['n', 'n']]);
 })();
+
+(function() {
+  Array.prototype.sumNMatrix = function (arr) {
+    return this.map(function (num, idx) {
+      return num + arr[idx];
+    })
+  };
+  assert.deepEqual([1, 2, 3].sumNMatrix([4, 5, 6]), [5, 7, 9]);
+})();
+
