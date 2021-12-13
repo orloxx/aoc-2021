@@ -1,5 +1,5 @@
 import assert from 'assert';
-import read from '../utils/read.js';
+import read from '../../utils/read.js';
 
 function flashAdjacent(list, start, counter) {
   const [i, j] = start;

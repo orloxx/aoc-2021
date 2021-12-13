@@ -1,5 +1,5 @@
 import assert from 'assert';
-import read from '../utils/read.js';
+import read from '../../utils/read.js';
 
 /**
  * 3D matrix

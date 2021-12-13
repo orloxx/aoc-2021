@@ -1,5 +1,5 @@
 import assert from 'assert';
-import read from '../utils/read.js';
+import read from '../../utils/read.js';
 
 function getNodes(list) {
   return list.reduce((prev, curr, i) => {

@@ -1,5 +1,5 @@
 import assert from 'assert';
-import read from '../utils/read.js';
+import read from '../../utils/read.js';
 
 const WRONG_POINTS = { ')': 3, ']': 57, '}': 1197, '>': 25137 };
 const CLOSE_POINTS = { '(': 1, '[': 2, '{': 3, '<': 4 };

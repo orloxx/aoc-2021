@@ -1,5 +1,5 @@
 import assert from 'assert';
-import read from '../utils/read.js';
+import read from '../../utils/read.js';
 
 function solution01(list) {
   return list.reduce((prev, curr) => {

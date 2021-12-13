@@ -1,7 +1,7 @@
 import { spawn } from 'child_process';
 
 function run(day) {
-  const p = spawn(`node ./${day}`, {
+  const p = spawn(`node ./days/${day}`, {
     shell: true,
     stdio: 'inherit',
   });

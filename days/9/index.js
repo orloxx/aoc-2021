@@ -1,5 +1,5 @@
 import assert from 'assert';
-import read from '../utils/read.js';
+import read from '../../utils/read.js';
 
 const DIRECTION = [[-1, 0], [1, 0], [0, -1], [0, 1]];
 
