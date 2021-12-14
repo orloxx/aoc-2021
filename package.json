@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "test": "npm start all"
+    "test": "npm start all",
+    "engine": "n engine"
   },
   "repository": {
     "type": "git",
