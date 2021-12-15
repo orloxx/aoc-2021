@@ -24,6 +24,7 @@
   },
   "homepage": "https://adventofcode.com",
   "engines": {
-    "node": "^16.13.1"
+    "node": "^16.13.1",
+    "npm": "^8.1.2"
   }
 }
