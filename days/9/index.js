@@ -1,69 +1,74 @@
-import assert from 'assert';
-import read from '../../utils/read.js';
+import assert from 'assert'
+import read from '../../utils/read.js'
 
-const DIRECTION = [[-1, 0], [1, 0], [0, -1], [0, 1]];
-
-function isLowest(n, list, i, j) {
-  return DIRECTION.every(([k, l]) => {
-    const elem = list[i + k] && list[i + k][j + l];
-    return !elem || n < elem;
-  });
+function areAdjacent([x1, y1], [x2, y2]) {
+  const dx = Math.abs(x1 - x2)
+  const dy = Math.abs(y1 - y2)
+  return dx < 2 && dy < 2
 }
 
-function getLowestCoordinates(list) {
-  return list.reduce((prev, curr, i) => {
-    const row = [...curr].toNumber()
-      .reduce((prevRow, n, j) => {
-        if (isLowest(n, list, i, j)) {
-          return [...prevRow, [i, j]];
-        }
-        return prevRow;
-      }, []);
-    return [...prev, ...row];
-  }, []);
+function move({ rope, num, dir, idx }) {
+  return [].nMatrix(num).map(() => {
+    const head = rope[0]
+    const tail = rope[rope.length - 1]
+    head[idx] += dir
+
+    for (let i = 0; i < rope.length - 1; i++) {
+      const body = rope[i + 1]
+      if (!areAdjacent(rope[i], body)) {
+        const x = rope[i][0] - body[0]
+        const y = rope[i][1] - body[1]
+        body[0] += x ? x / Math.abs(x) : 0
+        body[1] += y ? y / Math.abs(y) : 0
+      }
+    }
+
+    return [tail[0], tail[1]]
+  })
+}
+
+const POSITIONS = {
+  U: { dir: 1, idx: 0 },
+  R: { dir: 1, idx: 1 },
+  D: { dir: -1, idx: 0 },
+  L: { dir: -1, idx: 1 },
+}
+
+function moveRope(list, ropeSize) {
+  const tailSteps = new Set(['0,0'])
+  const rope = [].nMatrix(ropeSize).map(() => [0, 0])
+
+  list.forEach((line) => {
+    const [dir, n] = line.split(' ')
+    const tailPositions = move({
+      rope,
+      num: parseInt(n, 10),
+      ...POSITIONS[dir],
+    })
+
+    tailPositions.forEach((p) => {
+      const [x, y] = p
+      tailSteps.add(`${x},${y}`)
+    })
+  })
+
+  return tailSteps.size
 }
 
 function solution01(list) {
-  return getLowestCoordinates(list)
-    .map(([i, j]) => parseInt(list[i][j], 10) + 1)
-    .sumAll();
-}
-
-function getBasins(list, start, prev = []) {
-  const [i, j] = start;
-
-  const alreadyChecked = (x, y) =>
-    prev.length && prev.findIndex((p) => p[0] === x && p[1] === y) >= 0;
-
-  if (alreadyChecked(i, j)) return prev;
-
-  let basins = [...prev, start];
-
-  DIRECTION.forEach(([k, l]) => {
-    const elem = list[i + k] && list[i + k][j + l];
-    if (elem && elem !== '9' && !alreadyChecked(i + k, j + l))
-      basins = getBasins(list, [i + k, j + l], basins);
-  });
-
-  return basins;
+  return moveRope(list, 2)
 }
 
 function solution02(list) {
-  return getLowestCoordinates(list)
-    .map((p) => getBasins(list, p).length)
-    .sortIntegers(-1)
-    .reduce((prev, curr, i) => {
-      if (i < 3) return prev * curr;
-      return prev;
-    }, 1);
+  return moveRope(list, 10)
 }
 
-read('./9/test.txt').then((list) => {
-  assert.deepEqual(solution01(list), 15);
-  assert.deepEqual(solution02(list), 1134);
-});
+read('test.txt').then((list) => {
+  assert.deepEqual(solution01(list), 88)
+  assert.deepEqual(solution02(list), 36)
+})
 
-read('./9/input.txt').then((list) => {
-  assert.deepEqual(solution01(list), 502);
-  assert.deepEqual(solution02(list), 1330560);
-});
+read('input.txt').then((list) => {
+  assert.deepEqual(solution01(list), 6037)
+  assert.deepEqual(solution02(list), 2485)
+})

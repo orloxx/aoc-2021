@@ -1,37 +1,35 @@
-import assert from 'assert';
-import read from '../../utils/read.js';
+import assert from 'assert'
+import read from '../../utils/read.js'
+
+function getSortedCalories(list) {
+  return list
+    .reduce(
+      (acc, curr) => {
+        if (curr === '') return [...acc, 0]
+        acc[acc.length - 1] += parseInt(curr, 10)
+        return acc
+      },
+      [0]
+    )
+    .sortIntegers(-1)
+}
 
 function solution01(list) {
-  return list.reduce((prev, curr) => {
-    const prevNumber = parseInt(curr, 10);
-    if (prevNumber > prev.previous) {
-      return { count: prev.count + 1, previous: prevNumber };
-    }
-    return { count: prev.count, previous: prevNumber };
-  }, { count: 0, previous: Infinity }).count;
+  return getSortedCalories(list).shift()
 }
 
 function solution02(list) {
-  return list.reduce((prev, curr, i) => {
-    if (i > list.length - 2) return prev;
-
-    const num1 = parseInt(list[i], 10);
-    const num2 = parseInt(list[i + 1], 10);
-    const num3 = parseInt(list[i + 2], 10);
-    const prevNumber = num1 + num2 + num3;
-    if (prevNumber > prev.previous) {
-      return { count: prev.count + 1, previous: prevNumber };
-    }
-    return { count: prev.count, previous: prevNumber };
-  }, { count: 0, previous: Infinity }).count;
+  return getSortedCalories(list)
+    .filter((item, i) => i < 3)
+    .sumAll()
 }
 
-read('./1/test.txt').then((list) => {
-  assert.deepEqual(solution01(list), 7);
-  assert.deepEqual(solution02(list), 5);
-});
+read('test.txt').then((list) => {
+  assert.deepEqual(solution01(list), 24000)
+  assert.deepEqual(solution02(list), 45000)
+})
 
-read('./1/input.txt').then((list) => {
-  assert.deepEqual(solution01(list), 1215);
-  assert.deepEqual(solution02(list), 1150);
-});
+read('input.txt').then((list) => {
+  assert.deepEqual(solution01(list), 67450)
+  assert.deepEqual(solution02(list), 199357)
+})

@@ -1,39 +1,39 @@
-import { spawn } from 'child_process';
+import { spawn } from 'child_process'
 
 function run(day) {
   const p = spawn(`node ./days/${day}`, {
     shell: true,
     stdio: 'inherit',
-  });
+  })
   p.on('close', () => {
-    console.log(`Day ${day} finished.`);
-  });
+    console.log(`Day ${day} finished.`)
+  })
 }
 
 function getLastDay() {
-  const [year] = process.env.npm_package_version.split('.');
-  const endDate = new Date(`${year}-12-25`);
-  const now = new Date();
+  const [year] = process.env.npm_package_version.split('.')
+  const endDate = new Date(`${year}-12-25`)
+  const now = new Date()
 
   if (now.getTime() < endDate.getTime()) {
-    return now.getDate();
+    return now.getDate()
   }
-  return 25;
+  return 25
 }
 
 try {
-  const [, , day] = process.argv;
-  const lastDay = getLastDay();
+  const [, , day] = process.argv
+  const lastDay = getLastDay()
 
   if (day && day === 'all') {
-    for (let i = 1; i <= lastDay; i++) {
-      run(i);
+    for (let i = 1; i <= lastDay; i += 1) {
+      run(i)
     }
   } else if (day) {
-    run(day);
+    run(day)
   } else {
-    run(lastDay);
+    run(lastDay)
   }
 } catch (error) {
-  console.error(error);
+  console.error(error)
 }

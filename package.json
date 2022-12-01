@@ -1,13 +1,13 @@
 {
   "name": "@orloxx/aoc",
-  "version": "2021.0.0",
+  "version": "2022.0.0",
   "description": "Advent of Code",
   "main": "index.js",
   "type": "module",
   "scripts": {
     "start": "node index.js",
     "test": "npm start all",
-    "engine": "n engine"
+    "lint": "eslint '**/*.{js,cjs}'"
   },
   "repository": {
     "type": "git",
@@ -24,7 +24,15 @@
   },
   "homepage": "https://adventofcode.com",
   "engines": {
-    "node": "^16.13.1",
-    "npm": "^8.1.2"
+    "node": ">=18",
+    "npm": ">=8"
+  },
+  "devDependencies": {
+    "eslint": "^8.28.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "prettier": "^2.8.0"
   }
 }

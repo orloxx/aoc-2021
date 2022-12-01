@@ -1,58 +1,53 @@
-import assert from 'assert';
-import read from '../../utils/read.js';
+import assert from 'assert'
+import read from '../../utils/read.js'
 
-function getZeroesAndOnes(list) {
-  return list.reduce((prev, curr) => {
-    [...curr].forEach((digit, i) => {
-      if (!prev.zeroes[i]) prev.zeroes[i] = 0;
-      if (!prev.ones[i]) prev.ones[i] = 0;
+const PRIO = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
-      if (digit === '0') prev.zeroes[i]++;
-      else prev.ones[i]++;
-    });
-    return prev;
-  }, { ones: [], zeroes: [] });
+function findCommon(a, b) {
+  return a.split('').find((l) => b.split('').indexOf(l) >= 0)
+}
+
+function findCommon2([a, b, c]) {
+  return a
+    .split('')
+    .find((l) => b.split('').indexOf(l) >= 0 && c.split('').indexOf(l) >= 0)
 }
 
 function solution01(list) {
-  const prepare = getZeroesAndOnes(list);
-
-  const calc = prepare.ones.reduce((prev, oneDigits, i) => {
-    const zeroDigits = prepare.zeroes[i];
-    if (oneDigits > zeroDigits) {
-      return { gamma: `${prev.gamma}1`, epsilon: `${prev.epsilon}0` };
-    }
-    return { gamma: `${prev.gamma}0`, epsilon: `${prev.epsilon}1` };
-  }, { gamma: '', epsilon: '' });
-
-  return parseInt(calc.gamma, 2) * parseInt(calc.epsilon, 2);
-}
-
-function getParticles(list, check = ['1', '0'], i = 0) {
-  if (list.length === 1) return list[0];
-
-  const [first, second] = check;
-  const prepare = getZeroesAndOnes(list);
-
-  if (prepare.ones[i] >= prepare.zeroes[i]) {
-    return getParticles(list.filter((value) => [...value][i] === first), check, ++i);
-  }
-  return getParticles(list.filter((value) => [...value][i] === second), check, ++i);
+  return list.reduce((acc, curr) => {
+    const mid = curr.length / 2
+    const common = findCommon(
+      curr.substring(0, mid),
+      curr.substring(mid, curr.length)
+    )
+    return acc + PRIO.indexOf(common) + 1
+  }, 0)
 }
 
 function solution02(list) {
-  const oxygen = getParticles(list);
-  const co2 = getParticles(list, ['0', '1']);
+  return list
+    .reduce((acc, curr) => {
+      if (!acc.length) return [[curr]]
+      const last = acc[acc.length - 1]
 
-  return parseInt(oxygen, 2) * parseInt(co2, 2);
+      if (last.length < 3) {
+        last.push(curr)
+        return acc
+      }
+      return [...acc, [curr]]
+    }, [])
+    .reduce((acc, curr) => {
+      const common = findCommon2(curr)
+      return acc + PRIO.indexOf(common) + 1
+    }, 0)
 }
 
-read('./3/test.txt').then((list) => {
-  assert.deepEqual(solution01(list), 198);
-  assert.deepEqual(solution02(list), 230);
-});
+read('test.txt').then((list) => {
+  assert.deepEqual(solution01(list), 157)
+  assert.deepEqual(solution02(list), 70)
+})
 
-read('./3/input.txt').then((list) => {
-  assert.deepEqual(solution01(list), 3882564);
-  assert.deepEqual(solution02(list), 3385170);
-});
+read('input.txt').then((list) => {
+  assert.deepEqual(solution01(list), 7568)
+  assert.deepEqual(solution02(list), 2780)
+})
