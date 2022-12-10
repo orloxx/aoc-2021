@@ -88,5 +88,5 @@ read('test.txt').then((list) => {
 
 read('input.txt').then((list) => {
   assert.deepEqual(solution01(list), 1703)
-  assert.deepEqual(solution02(list), 4978279)
+  assert.deepEqual(solution02(list), 496650)
 })
