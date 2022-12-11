@@ -20,7 +20,7 @@ function parseMonkeyBusiness(list) {
       monkeyIdx = line.match(/[0-9]+/g).pop()
       acc[monkeyIdx] = { seen: 0 }
     } else if (line.startsWith(START_PREFIX)) {
-      // parse items it has
+      // parse monkey items
       acc[monkeyIdx].items = line.match(/[0-9]+/g).toNumber()
     } else if (line.startsWith(OP_PREFIX)) {
       // define operation function
@@ -31,11 +31,8 @@ function parseMonkeyBusiness(list) {
       acc[monkeyIdx].operation = (old) =>
         OPERATIONS[op](param(x, old), param(y, old))
     } else if (line.startsWith(TEST_PREFIX)) {
-      // Save test condition
-      const divisibleBy = line.replace(TEST_PREFIX, '')
-
-      acc[monkeyIdx].divisibleBy = divisibleBy
-      acc[monkeyIdx].test = (worry) => worry % parseInt(divisibleBy, 10) === 0
+      // Save divisibleBy check
+      acc[monkeyIdx].divisibleBy = line.replace(TEST_PREFIX, '')
     } else if (line.startsWith(TRUE_PREFIX)) {
       // Throw-to-monkey index when condition is true
       acc[monkeyIdx].trueMonkey = line.replace(TRUE_PREFIX, '')
