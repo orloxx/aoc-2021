@@ -17,6 +17,13 @@ const POLYFILLS = {
     assert.deepEqual([1, 2, 3, 4].sumAll(), 10)
   },
 
+  multiplyAll() {
+    Array.prototype.multiplyAll = function () {
+      return this.reduce((prev, val) => prev * parseInt(val, 10), 1)
+    }
+    assert.deepEqual([1, 2, 3, 4].multiplyAll(), 24)
+  },
+
   areDistinct() {
     Array.prototype.areDistinct = function () {
       const s = new Set()
