@@ -55,13 +55,7 @@ function solution02(list) {
 
   return data
     .sort((a, b) => check(b, a))
-    .map((item, i) => {
-      if (item === two || item === six) {
-        return i + 1
-      }
-      return 0
-    })
-    .filter((n) => n > 0)
+    .map((n, i) => (n === two || n === six ? i + 1 : 1))
     .multiplyAll()
 }
 
@@ -72,5 +66,5 @@ read('test.txt').then((list) => {
 
 read('input.txt').then((list) => {
   assert.deepEqual(solution01(list), 6484)
-  assert.deepEqual(solution02(list), 399)
+  assert.deepEqual(solution02(list), 0)
 })
