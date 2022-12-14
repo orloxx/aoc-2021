@@ -51,7 +51,7 @@ function doMonkeyBusiness({ monkeyData, rounds, naivety }) {
     .reduce(
       (group) => {
         // run each round
-        return group.map((monkey, i) => {
+        return group.map((monkey) => {
           const newSeen = monkey.items.reduce((seen, worry) => {
             // worry operation can go big
             const newWorry = naivety(monkey.operation(worry))
@@ -64,7 +64,8 @@ function doMonkeyBusiness({ monkeyData, rounds, naivety }) {
             return seen + 1
           }, 0)
           // monkey has seen and thrown all items
-          group[i].items = []
+          // eslint-disable-next-line no-param-reassign
+          monkey.items = []
           return {
             ...monkey,
             // Run each turn
