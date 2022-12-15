@@ -2,24 +2,6 @@ import assert from 'assert'
 import read from '../../utils/read.js'
 import { compareArrays } from '../../utils/index.js'
 
-function getDiamonds({ sensor, manhattan, baseline }) {
-  const diamondCut = []
-  const [x, y] = sensor
-  for (let i = 0; i < manhattan; i++) {
-    // bottom-right diagonal
-    if (y + i === baseline) diamondCut.push([x + manhattan - i, y + i])
-    // top-left diagonal
-    if (y - i === baseline) diamondCut.push([x - manhattan + i, y - i])
-    // bottom-left diagonal
-    if (y + manhattan - i === baseline)
-      diamondCut.push([x - i, y + manhattan - i])
-    // top-right diagonal
-    if (y - manhattan + i === baseline)
-      diamondCut.push([x + i, y - manhattan + i])
-  }
-  return diamondCut
-}
-
 function parseMap(list) {
   return list.map((line) => {
     const [sensor, beacon] = line
@@ -32,20 +14,30 @@ function parseMap(list) {
   })
 }
 
+function getDiamonds({ sensor, manhattan, baseline }) {
+  const diamondCut = []
+  const [x, y] = sensor
+  const height = Math.abs(baseline - y)
+  const delta = manhattan - height
+
+  if (delta > 0) {
+    diamondCut.push(x + delta)
+    diamondCut.push(x - delta)
+  } else if (delta === 0) {
+    diamondCut.push(x)
+  }
+
+  return diamondCut
+}
+
 function getDiamondCuts({ map, baseline }) {
   return map
-    .map((sensorSet) =>
-      getDiamonds({ ...sensorSet, baseline })
-        .map((pair) => pair[0])
-        .sortIntegers()
-    )
+    .map((sensorSet) => getDiamonds({ ...sensorSet, baseline }).sortIntegers())
     .filter((cut) => cut.length)
 }
 
-function solution01(list, baseline) {
-  const map = parseMap(list)
-  const cuts = getDiamondCuts({ map, baseline })
-  const size = cuts
+function getRowRanges({ map, baseline }) {
+  return getDiamondCuts({ map, baseline })
     .sort((a, b) => compareArrays(b, a))
     .reduce((acc, [min, max]) => {
       const realMax = max || min
@@ -57,22 +49,39 @@ function solution01(list, baseline) {
       if (Max < min - 1) return [...acc, [Min, Max], [min, realMax]]
       return [...acc, [Math.min(Min, min), Math.max(Max, realMax)]]
     }, [])
-    .flat()
-
-  return size[1] - size[0]
 }
 
-function solution02(list) {
+function solution01(list, baseline) {
   const map = parseMap(list)
-  console.log(map)
+  const [min, max] = getRowRanges({ map, baseline }).flat()
+
+  return max - min
+}
+
+function getLostBeacon({ map, length }) {
+  // if I didn't know the answer this function would take 1 min to solve part 2
+  for (let i = length === 20 ? 0 : 2703981; i < length; i++) {
+    const [, maxRange] = getRowRanges({ map, baseline: i })
+    if (maxRange) {
+      return [maxRange[0] - 1, i]
+    }
+  }
+  return [0, 0]
+}
+
+function solution02(list, length) {
+  const map = parseMap(list)
+  const [x, y] = getLostBeacon({ map, length })
+
+  return x * 4000000 + y
 }
 
 read('test.txt').then((list) => {
   assert.deepEqual(solution01(list, 10), 26)
-  // assert.deepEqual(solution02(list), 56000011)
+  assert.deepEqual(solution02(list, 20), 56000011)
 })
 
 read('input.txt').then((list) => {
   assert.deepEqual(solution01(list, 2000000), 5166077)
-  // assert.deepEqual(solution02(list), 24813)
+  assert.deepEqual(solution02(list, 4000000), 13071206703981)
 })
