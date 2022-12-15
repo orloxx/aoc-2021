@@ -12,6 +12,7 @@ module.exports = {
   rules: {
     'func-names': 0,
     'import/extensions': 0,
+    'import/prefer-default-export': 0,
     'no-console': 0,
     'no-extend-native': 0,
     'no-plusplus': 0,

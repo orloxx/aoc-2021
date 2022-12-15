@@ -1,5 +1,6 @@
 import assert from 'assert'
 import read from '../../utils/read.js'
+import { compareArrays } from '../../utils/index.js'
 
 function getDiamonds({ sensor, manhattan, baseline }) {
   const diamondCut = []
@@ -31,32 +32,40 @@ function parseMap(list) {
   })
 }
 
-function solution01(list, baseline) {
-  const map = parseMap(list)
-  const beacons = map
-    .filter(({ beacon }) => beacon[1] === baseline)
-    .map(({ beacon }) => beacon[0])
-  const cuts = map
+function getDiamondCuts({ map, baseline }) {
+  return map
     .map((sensorSet) =>
       getDiamonds({ ...sensorSet, baseline })
         .map((pair) => pair[0])
         .sortIntegers()
     )
     .filter((cut) => cut.length)
-
-  return cuts.reduce((set, [min, max]) => {
-    const addItem = (i) => beacons.indexOf(i) < 0 && set.add(i)
-    if (!max) addItem(min)
-    else {
-      for (let i = min; i <= max; i++) {
-        addItem(i)
-      }
-    }
-    return set
-  }, new Set()).size
 }
 
-function solution02(list) {}
+function solution01(list, baseline) {
+  const map = parseMap(list)
+  const cuts = getDiamondCuts({ map, baseline })
+  const size = cuts
+    .sort((a, b) => compareArrays(b, a))
+    .reduce((acc, [min, max]) => {
+      const realMax = max || min
+      if (!acc.length) {
+        return [[min || Infinity, realMax]]
+      }
+      const [Min, Max] = acc.pop()
+
+      if (Max < min - 1) return [...acc, [Min, Max], [min, realMax]]
+      return [...acc, [Math.min(Min, min), Math.max(Max, realMax)]]
+    }, [])
+    .flat()
+
+  return size[1] - size[0]
+}
+
+function solution02(list) {
+  const map = parseMap(list)
+  console.log(map)
+}
 
 read('test.txt').then((list) => {
   assert.deepEqual(solution01(list, 10), 26)
