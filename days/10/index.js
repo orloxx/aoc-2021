@@ -39,7 +39,7 @@ function solution02(list) {
   const COLS = 40
   const ROWS = 6
 
-  return execute(list, { screen: [].nm2DMatrix(COLS, ROWS, ' ') }, (acc) => {
+  return execute(list, { screen: [].nm2DMatrix(ROWS, COLS, ' ') }, (acc) => {
     const col = (acc.steps - 1) % COLS
     const row = Math.floor((acc.steps - 1) / COLS)
 

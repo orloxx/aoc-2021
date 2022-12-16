@@ -143,19 +143,14 @@ const POLYFILLS = {
 
   nm2DMatrix() {
     Array.prototype.nm2DMatrix = function (n, m = n, fill = 0) {
-      return Array.from(
-        {
-          length: m,
-        },
-        () => new Array(n).fill(fill)
-      )
+      return Array.from({ length: n }, () => new Array(m).fill(fill))
     }
-    assert.deepEqual([].nm2DMatrix(2, 3), [
+    assert.deepEqual([].nm2DMatrix(3, 2), [
       [0, 0],
       [0, 0],
       [0, 0],
     ])
-    assert.deepEqual([].nm2DMatrix(2, 1, 'n'), [['n', 'n']])
+    assert.deepEqual([].nm2DMatrix(1, 2, 'n'), [['n', 'n']])
   },
 
   n2DMatrix() {
