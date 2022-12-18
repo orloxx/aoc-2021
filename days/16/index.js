@@ -46,9 +46,8 @@ function openingValves({ distances, valve, minutes, active, opened = {} }) {
   return allValves
 }
 
-function solution01(list) {
-  const { tree, cost } = parseInput(list)
-  const distances = Object.keys(tree).reduce((accStart, start) => {
+function getDistances(tree) {
+  return Object.keys(tree).reduce((accStart, start) => {
     return Object.keys(tree).reduce((accEnd, end) => {
       return {
         ...accEnd,
@@ -56,6 +55,11 @@ function solution01(list) {
       }
     }, accStart)
   }, {})
+}
+
+function solution01(list) {
+  const { tree, cost } = parseInput(list)
+  const distances = getDistances(tree)
   const active = Object.keys(tree).filter((valve) => cost[valve] > 0)
 
   return openingValves({ distances, valve: 'AA', minutes: 30, active })
@@ -68,14 +72,53 @@ function solution01(list) {
     .pop()
 }
 
-function solution02(list) {}
+function getMaxCost({ pathCostsMap, cost }) {
+  return pathCostsMap.reduce((acc, pathCost) => {
+    const path = Object.keys(pathCost).sort().join(',')
+    const score = Object.entries(pathCost).reduce(
+      (acc1, [node, minutes]) => acc1 + cost[node] * minutes,
+      0
+    )
+    const currentScore = acc[path] || -Infinity
+    return { ...acc, [path]: Math.max(currentScore, score) }
+  }, {})
+}
+
+function solution02(list) {
+  const { tree, cost } = parseInput(list)
+  const distances = getDistances(tree)
+  const active = Object.keys(tree).filter((valve) => cost[valve] > 0)
+
+  const pathCostsMap = openingValves({
+    distances,
+    valve: 'AA',
+    minutes: 26,
+    active,
+  })
+
+  const maxScores = getMaxCost({ pathCostsMap, cost })
+  const scoreKeys = Object.keys(maxScores)
+
+  return scoreKeys.reduce((acc, elf) => {
+    return scoreKeys.reduce((acc1, elephant) => {
+      const elfScores = elf.split(',')
+      const elephantScores = elephant.split(',')
+      const unique = new Set([...elfScores, ...elephantScores])
+
+      if (unique.size === elfScores.length + elephantScores.length) {
+        return Math.max(maxScores[elf] + maxScores[elephant], acc1)
+      }
+      return acc1
+    }, acc)
+  }, -Infinity)
+}
 
 read('test.txt').then((list) => {
   assert.deepEqual(solution01(list), 1651)
-  // assert.deepEqual(solution02(list), 1707)
+  assert.deepEqual(solution02(list), 1707)
 })
 
 read('input.txt').then((list) => {
   assert.deepEqual(solution01(list), 1792)
-  // assert.deepEqual(solution02(list), 2000)
+  assert.deepEqual(solution02(list), 2587)
 })
