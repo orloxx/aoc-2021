@@ -31,6 +31,7 @@ function solution01(list) {
 }
 
 function solution02(list) {
+  // not enough power! letting all those elephants down
   return playTetris(list, 1000000000000)
 }
 
