@@ -175,6 +175,17 @@ const POLYFILLS = {
     }
     assert.deepEqual([1, 2, 3].sumNMatrix([4, 5, 6]), [5, 7, 9])
   },
+
+  range() {
+    Array.prototype.range = function (n, m) {
+      if (!m) {
+        return Array.from(new Array(n), (noop, i) => i)
+      }
+      return Array.from(new Array(m - n), (noop, i) => i + n)
+    }
+    assert.deepEqual([].range(5), [0, 1, 2, 3, 4])
+    assert.deepEqual([].range(1, 5), [1, 2, 3, 4])
+  },
 }
 
 Object.keys(POLYFILLS).forEach((funcName) => POLYFILLS[funcName]())
