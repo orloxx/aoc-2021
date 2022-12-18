@@ -1,120 +1,74 @@
 import assert from 'assert'
 import read from '../../utils/read.js'
+import bfs from '../../utils/bfs.js'
 
-class Valves {
-  constructor(list) {
-    const tree = list.reduce((acc, line) => {
+function parseInput(list) {
+  return list.reduce(
+    (acc, line) => {
       const [valveInfo, tunnelsInfo] = line.split(';')
       const [valve] = valveInfo.match(/[A-Z]{2}/g)
       const [pressure] = valveInfo.match(/-?\d*\.?\d+/g).toNumber()
       const tunnel = tunnelsInfo.match(/[A-Z]{2}/g)
-      return { ...acc, [valve]: { pressure, tunnel, key: valve } }
-    }, {})
 
-    this.tree = tree
-
-    Object.keys(tree).forEach((key) => {
-      tree[key].distance = this.calculateDistance(key)
-    })
-  }
-
-  get vertices() {
-    return Object.keys(this.tree).map((key) => ({ ...this.tree[key] }))
-  }
-
-  get active() {
-    return this.vertices.filter(({ pressure }) => pressure > 0)
-  }
-
-  get edges() {
-    return this.vertices.reduce((acc, curr) => {
-      return [
-        ...acc,
-        ...curr.tunnel.reduce((acc00, vertex) => {
-          return [...acc00, [curr.key, vertex]]
-        }, []),
-      ]
-    }, [])
-  }
-
-  getTunnel(key) {
-    return this.tree[key].tunnel
-  }
-
-  calculateDistance(start) {
-    const distances = {}
-
-    const step = (name, distance) => {
-      if (typeof distances[name] !== 'undefined' && distances[name] <= distance)
-        return
-      distances[name] = distance
-      this.getTunnel(name).forEach((n) => step(n, distance + 1))
-    }
-    step(start, 0)
-
-    return distances
-  }
-
-  static getTime({ current, activeValve }) {
-    return current.time - current.distance[activeValve.key] - 1
-  }
-
-  openValves(mins = 30, people = 1) {
-    const active = this.active
-    const initial = () => ({ active, done: false, time: mins, ppm: 0 })
-    const states = [{ ...this.tree.AA, ...initial() }]
-
-    // loop through state
-    for (let i = 0; i < states.length; i++) {
-      const current = states[i]
-
-      if (current.time <= 0) current.done = true
-
-      if (!current.done) {
-        // loop through active valves
-        const pushed = current.active
-          .filter(
-            (activeValve) =>
-              activeValve.key !== current.key &&
-              Valves.getTime({ current, activeValve }) > 1
-          )
-          .reduce((acc, activeValve) => {
-            const time = Valves.getTime({ current, activeValve })
-
-            states.push({
-              ...this.tree[activeValve.key],
-              ...initial(),
-              time,
-              active: current.active.filter(
-                ({ key }) => key !== activeValve.key
-              ),
-              ppm: current.ppm + time * this.tree[activeValve.key].pressure,
-            })
-
-            return true
-          }, false)
-
-        if (!pushed) current.done = true
+      return {
+        tree: { ...acc.tree, [valve]: tunnel },
+        cost: { ...acc.cost, [valve]: pressure },
       }
-    }
+    },
+    { tree: {}, cost: {} }
+  )
+}
 
-    return states.filter(({ done }) => done).sort((a, b) => b.ppm - a.ppm)
-  }
+function openingValves({ distances, valve, minutes, active, opened = {} }) {
+  const allValves = [opened]
+
+  active.forEach((other, index) => {
+    const newMinutes = minutes - distances[valve][other] - 1
+    if (newMinutes < 1) return
+
+    const newOpened = JSON.parse(JSON.stringify(opened))
+    newOpened[other] = newMinutes
+
+    const newActive = [...active]
+    newActive.splice(index, 1)
+
+    allValves.push(
+      ...openingValves({
+        distances,
+        valve: other,
+        minutes: newMinutes,
+        active: newActive,
+        opened: newOpened,
+      })
+    )
+  })
+
+  return allValves
 }
 
 function solution01(list) {
-  const valves = new Valves(list)
-  const [valve] = valves.openValves()
+  const { tree, cost } = parseInput(list)
+  const distances = Object.keys(tree).reduce((accStart, start) => {
+    return Object.keys(tree).reduce((accEnd, end) => {
+      return {
+        ...accEnd,
+        [start]: { ...accEnd[start], [end]: bfs(tree, start, end).length - 1 },
+      }
+    }, accStart)
+  }, {})
+  const active = Object.keys(tree).filter((valve) => cost[valve] > 0)
 
-  return valve.ppm
+  return openingValves({ distances, valve: 'AA', minutes: 30, active })
+    .map((path) => {
+      return Object.entries(path).reduce((acc, [node, minutes]) => {
+        return acc + cost[node] * minutes
+      }, 0)
+    })
+    .sortIntegers()
+    .pop()
 }
 
-function solution02(list) {
-  const valves = new Valves(list)
-  const [valve] = valves.openValves(26, 2)
-
-  return valve.ppm
-}
+function solution02(list) {}
 
 read('test.txt').then((list) => {
   assert.deepEqual(solution01(list), 1651)
