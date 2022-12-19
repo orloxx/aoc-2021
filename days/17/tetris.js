@@ -41,7 +41,7 @@ class Tetris {
   }
 
   get isDone() {
-    return this.rocks.length > this.max
+    return this.rocks.length >= this.max
   }
 
   /**

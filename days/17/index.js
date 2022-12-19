@@ -26,21 +26,31 @@ function playTetris(list, top) {
   return tetris.height
 }
 
-function solution01(list) {
-  return playTetris(list, 2021)
+function solve(list, [total, first, top, height]) {
+  const piecesPerBlock = top - first
+  const numBlocks = Math.floor((total - first) / piecesPerBlock)
+  const rest = total - numBlocks * piecesPerBlock
+  const calcH = height * numBlocks
+
+  return calcH + playTetris(list, rest)
 }
 
-function solution02(list) {
-  // not enough power! letting all those elephants down
-  return playTetris(list, 1000000000000)
+function solution01(list, params) {
+  return solve(list, [2022, ...params])
+}
+
+function solution02(list, params) {
+  return solve(list, [1000000000000, ...params])
 }
 
 read('test.txt').then((list) => {
-  assert.deepEqual(solution01(list), 3068)
-  // assert.deepEqual(solution02(list), 1514285714288)
+  const params = [15, 50, 53]
+  assert.deepEqual(solution01(list, params), 3068)
+  assert.deepEqual(solution02(list, params), 1514285714288)
 })
 
 read('input.txt').then((list) => {
-  assert.deepEqual(solution01(list), 3211)
-  // assert.deepEqual(solution02(list), 2000)
+  const params = [255, 2005, 2781]
+  assert.deepEqual(solution01(list, params), 3211)
+  assert.deepEqual(solution02(list, params), 1589142857183)
 })
