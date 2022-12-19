@@ -1,66 +1,6 @@
 import Piece from './piece.js'
 
-const MAX_COL = 7
-
 class Tetris {
-  constructor(list, max) {
-    this.max = max
-    this.rocks = []
-    this.occupied = new Set()
-    this.order = [
-      { name: 'horizontal-bar', ...Tetris.getRocksSpecs(['####']) },
-      { name: 'plus', ...Tetris.getRocksSpecs(['.#.', '###', '.#.']) },
-      { name: 'el-shape', ...Tetris.getRocksSpecs(['###', '..#', '..#']) },
-      { name: 'vertical-bar', ...Tetris.getRocksSpecs(['#', '#', '#', '#']) },
-      { name: 'square', ...Tetris.getRocksSpecs(['##', '##']) },
-    ]
-    this.pattern = list[0].split('').map((dir) => (dir === '>' ? 1 : -1))
-  }
-
-  get height() {
-    return this.rocks.reduce((height, rock) => {
-      const tallest = rock.rel.reduce((max, [y]) => {
-        return Math.max(max, y)
-      }, 0)
-      return Math.max(height, tallest)
-    }, 0)
-  }
-
-  // a new rock has been summoned from the tetris gods
-  get next() {
-    const current = this.order.shift()
-    const piece = new Piece(current, this.height)
-    this.order.push(current)
-    return piece
-  }
-
-  get nextDirection() {
-    const current = this.pattern.shift()
-    this.pattern.push(current)
-    return current
-  }
-
-  get isDone() {
-    return this.rocks.length >= this.max
-  }
-
-  /**
-   *
-   * getEmptyBlock(4) will return this in an M x N matrix
-   * with 4 units height
-   *
-   * ....... -> 3
-   * ....... -> 2
-   * ....... -> 1
-   * ....... -> 0
-   *
-   * @param height
-   * @returns {*|(Array | any[])[]}
-   */
-  static getEmptyBlock(height = 1) {
-    return [].nm2DMatrix(height, MAX_COL, '.')
-  }
-
   static getRocksSpecs(rock) {
     // relative coordinates (rel) in [y, x] notation
     const rel = rock.reduce((acc, line, y) => {
@@ -74,6 +14,74 @@ class Tetris {
     }, [])
 
     return { rel, rock }
+  }
+
+  static getCeiling(rocks) {
+    return rocks.reduce((max, rock) => {
+      return Math.max(max, Math.max(...rock.rel.map(([y]) => y)))
+    }, 0)
+  }
+
+  static getFloor(rocks) {
+    return rocks.reduce((min, rock) => {
+      return Math.min(min, Math.min(...rock.rel.map(([y]) => y)))
+    }, Infinity)
+  }
+
+  static getBlockInfo(rocks) {
+    const floor = this.getFloor(rocks)
+    const newRocks = rocks.map((rock) => new Piece(rock, 1 - floor))
+    return {
+      signature: newRocks.map(({ rel }) => JSON.stringify(rel)).join(''),
+      height: this.getCeiling(newRocks),
+    }
+  }
+
+  constructor(list, max) {
+    this.max = max
+    this.rocks = []
+    this.occupied = new Set()
+    this.shapes = [
+      { name: 'horizontal-bar', ...Tetris.getRocksSpecs(['####']) },
+      { name: 'plus', ...Tetris.getRocksSpecs(['.#.', '###', '.#.']) },
+      { name: 'el-shape', ...Tetris.getRocksSpecs(['###', '..#', '..#']) },
+      { name: 'vertical-bar', ...Tetris.getRocksSpecs(['#', '#', '#', '#']) },
+      { name: 'square', ...Tetris.getRocksSpecs(['##', '##']) },
+    ]
+    this.windPattern = list[0].split('').map((dir) => (dir === '>' ? 1 : -1))
+    // To calculate 3 items: [start shape, shape repeat, block height]
+    this.blockInfo = []
+  }
+
+  get height() {
+    if (this.blockInfo.length) {
+      const [start, repeat, height] = this.blockInfo
+      const piecesPerBlock = repeat - start
+      const numBlocks = Math.floor((this.max - start) / piecesPerBlock)
+      const rest = this.max - numBlocks * piecesPerBlock
+      const calcH = height * numBlocks
+
+      return calcH + Tetris.getCeiling(this.rocks.slice(0, rest))
+    }
+    return Tetris.getCeiling(this.rocks)
+  }
+
+  // a new rock has been summoned from the tetris gods
+  get nextShape() {
+    const current = this.shapes.shift()
+    const piece = new Piece(current, this.height)
+    this.shapes.push(current)
+    return piece
+  }
+
+  get nextWindDirection() {
+    const current = this.windPattern.shift()
+    this.windPattern.push(current)
+    return current
+  }
+
+  get isDone() {
+    return this.blockInfo.length === 3 || this.rocks.length >= this.max
   }
 
   collidesWithRocks(newPosition) {
@@ -100,12 +108,42 @@ class Tetris {
     return !this.collidesWithRocks(downPosition)
   }
 
+  detectPlacedPatterns() {
+    const area = 2100
+
+    if (this.rocks.length === area) {
+      const block = 40
+      const rocks = [...this.rocks]
+
+      for (let start = 0; start < area - block; start += 5) {
+        const { signature: sig1 } = Tetris.getBlockInfo(
+          rocks.slice(start, start + block)
+        )
+
+        for (let repeat = start + 5; repeat < area - block; repeat += 5) {
+          const { signature: sig2 } = Tetris.getBlockInfo(
+            rocks.slice(repeat, repeat + block)
+          )
+
+          if (sig1 === sig2) {
+            const { height } = Tetris.getBlockInfo(rocks.slice(start, repeat))
+            this.blockInfo = [start, repeat, height]
+            break
+          }
+        }
+
+        if (this.blockInfo.length) break
+      }
+    }
+  }
+
   put(rock) {
     rock.stay()
     rock.rel.forEach(([y, x]) => {
       this.occupied.add(`${y}-${x}`)
     })
     this.rocks.push(rock)
+    this.detectPlacedPatterns()
   }
 }
 
