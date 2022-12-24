@@ -186,6 +186,20 @@ const POLYFILLS = {
     assert.deepEqual([].range(5), [0, 1, 2, 3, 4])
     assert.deepEqual([].range(1, 5), [1, 2, 3, 4])
   },
+
+  getNumbers() {
+    String.prototype.getNumbers = function () {
+      return this.match(/[0-9]+/g).toNumber()
+    }
+    assert.deepEqual('10R5L5R'.getNumbers(), [10, 5, 5])
+  },
+
+  getLetters() {
+    String.prototype.getLetters = function () {
+      return this.match(/[a-zA-Z]+/g)
+    }
+    assert.deepEqual('10R5L5R'.getLetters(), ['R', 'L', 'R'])
+  },
 }
 
 Object.keys(POLYFILLS).forEach((funcName) => POLYFILLS[funcName]())
