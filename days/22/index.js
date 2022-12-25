@@ -80,9 +80,9 @@ function solution01(list) {
 }
 
 const FOLD_CUBE = {
-  E: ([y]) => {
+  E: ([y, x]) => {
     if ((y >= 0 && y < 50) || (y >= 100 && y < 150)) {
-      return [150 - y, 99, ['R', 'R']]
+      return [149 - y, 248 - x, ['R', 'R']]
     }
     if (y >= 50 && y < 100) {
       return [49, 50 + y, ['L']]
@@ -90,17 +90,17 @@ const FOLD_CUBE = {
     return [149, y - 100, ['L']]
   },
   S: ([, x]) => {
-    if (x >= 100 && x < 150) {
-      return [x - 50, 99, ['R']]
+    if (x >= 0 && x < 50) {
+      return [0, 100 + x, []]
     }
     if (x >= 50 && x < 100) {
       return [100 + x, 49, ['R']]
     }
-    return [0, 100 + x, []]
+    return [x - 50, 99, ['R']]
   },
   W: ([y, x]) => {
     if ((y >= 0 && y < 50) || (y >= 100 && y < 150)) {
-      return [150 - y, 50 - x, ['R', 'R']]
+      return [149 - y, 50 - x, ['R', 'R']]
     }
     if (y >= 50 && y < 100) {
       return [100, y - 50, ['L']]
@@ -159,5 +159,5 @@ read('test.txt').then((list) => {
 
 read('input.txt').then((list) => {
   assert.deepEqual(solution01(list), 31568)
-  assert.deepEqual(solution02(list), 3555057453229)
+  assert.deepEqual(solution02(list), 36540)
 })
