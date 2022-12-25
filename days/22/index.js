@@ -82,51 +82,39 @@ function solution01(list) {
 const FOLD_CUBE = {
   E: ([y]) => {
     if ((y >= 0 && y < 50) || (y >= 100 && y < 150)) {
-      TURN.R()
-      TURN.R()
-      return [150 - y, 99]
+      return [150 - y, 99, ['R', 'R']]
     }
     if (y >= 50 && y < 100) {
-      TURN.L()
-      return [49, 50 + y]
+      return [49, 50 + y, ['L']]
     }
-    TURN.L()
-    return [149, y - 100]
+    return [149, y - 100, ['L']]
   },
   S: ([, x]) => {
     if (x >= 100 && x < 150) {
-      TURN.R()
-      return [x - 50, 99]
+      return [x - 50, 99, ['R']]
     }
     if (x >= 50 && x < 100) {
-      TURN.R()
-      return [100 + x, 49]
+      return [100 + x, 49, ['R']]
     }
-    return [0, 100 + x]
+    return [0, 100 + x, []]
   },
   W: ([y, x]) => {
     if ((y >= 0 && y < 50) || (y >= 100 && y < 150)) {
-      TURN.R()
-      TURN.R()
-      return [150 - y, 50 - x]
+      return [150 - y, 50 - x, ['R', 'R']]
     }
     if (y >= 50 && y < 100) {
-      TURN.L()
-      return [100, y - 50]
+      return [100, y - 50, ['L']]
     }
-    TURN.L()
-    return [0, y - 100]
+    return [0, y - 100, ['L']]
   },
   N: ([, x]) => {
     if (x >= 0 && x < 50) {
-      TURN.R()
-      return [50 + x, 50]
+      return [50 + x, 50, ['R']]
     }
     if (x >= 50 && x < 100) {
-      TURN.R()
-      return [100 + x, 0]
+      return [100 + x, 0, ['R']]
     }
-    return [199, x - 100]
+    return [199, x - 100, []]
   },
 }
 
@@ -141,10 +129,11 @@ function solution02(list) {
         const [ny, nx] = WALK[dir](current)
 
         if (!map[ny] || !map[ny][nx]) {
-          const [fy, fx] = FOLD_CUBE[dir](current)
+          const [fy, fx, turns] = FOLD_CUBE[dir](current)
 
           if (map[fy][fx] === '.') {
             current = [fy, fx]
+            turns.forEach((t) => TURN[t]())
           } else {
             break
           }
@@ -166,7 +155,6 @@ function solution02(list) {
 
 read('test.txt').then((list) => {
   assert.deepEqual(solution01(list), 6032)
-  // assert.deepEqual(solution02(list), 5031)
 })
 
 read('input.txt').then((list) => {
