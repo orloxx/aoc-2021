@@ -51,9 +51,8 @@ function solution01(list) {
 
   steps.forEach((step) => {
     if (typeof step === 'number') {
-      const [dir] = DIR
-
       for (let i = 0; i < step; i++) {
+        const [dir] = DIR
         const [ny, nx] = WALK[dir](current)
 
         if (!map[ny] || !map[ny][nx]) {
@@ -80,14 +79,97 @@ function solution01(list) {
   return 1000 * (y + 1) + 4 * (x + 1) + DIRS.indexOf(DIR[0])
 }
 
-function solution02(list) {}
+const FOLD_CUBE = {
+  E: ([y]) => {
+    if ((y >= 0 && y < 50) || (y >= 100 && y < 150)) {
+      TURN.R()
+      TURN.R()
+      return [150 - y, 99]
+    }
+    if (y >= 50 && y < 100) {
+      TURN.L()
+      return [49, 50 + y]
+    }
+    TURN.L()
+    return [149, y - 100]
+  },
+  S: ([, x]) => {
+    if (x >= 100 && x < 150) {
+      TURN.R()
+      return [x - 50, 99]
+    }
+    if (x >= 50 && x < 100) {
+      TURN.R()
+      return [100 + x, 49]
+    }
+    return [0, 100 + x]
+  },
+  W: ([y, x]) => {
+    if ((y >= 0 && y < 50) || (y >= 100 && y < 150)) {
+      TURN.R()
+      TURN.R()
+      return [150 - y, 50 - x]
+    }
+    if (y >= 50 && y < 100) {
+      TURN.L()
+      return [100, y - 50]
+    }
+    TURN.L()
+    return [0, y - 100]
+  },
+  N: ([, x]) => {
+    if (x >= 0 && x < 50) {
+      TURN.R()
+      return [50 + x, 50]
+    }
+    if (x >= 50 && x < 100) {
+      TURN.R()
+      return [100 + x, 0]
+    }
+    return [199, x - 100]
+  },
+}
+
+function solution02(list) {
+  const { map, steps, X } = parseInput(list)
+  let current = [0, X]
+
+  steps.forEach((step) => {
+    if (typeof step === 'number') {
+      for (let i = 0; i < step; i++) {
+        const [dir] = DIR
+        const [ny, nx] = WALK[dir](current)
+
+        if (!map[ny] || !map[ny][nx]) {
+          const [fy, fx] = FOLD_CUBE[dir](current)
+
+          if (map[fy][fx] === '.') {
+            current = [fy, fx]
+          } else {
+            break
+          }
+        } else if (map[ny][nx] === '.') {
+          current = [ny, nx]
+        } else {
+          break
+        }
+      }
+    } else {
+      TURN[step]()
+    }
+  })
+
+  const [y, x] = current
+
+  return 1000 * (y + 1) + 4 * (x + 1) + DIRS.indexOf(DIR[0])
+}
 
 read('test.txt').then((list) => {
   assert.deepEqual(solution01(list), 6032)
-  // assert.deepEqual(solution02(list), 301)
+  // assert.deepEqual(solution02(list), 5031)
 })
 
 read('input.txt').then((list) => {
   assert.deepEqual(solution01(list), 31568)
-  // assert.deepEqual(solution02(list), 3555057453229)
+  assert.deepEqual(solution02(list), 3555057453229)
 })
