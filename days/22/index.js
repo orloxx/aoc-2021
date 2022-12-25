@@ -12,7 +12,7 @@ const WALK = {
 const FOLD = {
   E: (map, [y]) => [y, map[y].findIndex((c) => c)],
   S: (map, [, x]) => [map.findIndex((l) => l[x]), x],
-  W: (map, [y]) => [y, map[y][map[y].length - 1]],
+  W: (map, [y]) => [y, map[y].length - 1],
   N: (map, [, x]) => [
     map.length -
       map
@@ -88,6 +88,6 @@ read('test.txt').then((list) => {
 })
 
 read('input.txt').then((list) => {
-  assert.deepEqual(solution01(list), 0)
+  assert.deepEqual(solution01(list), 31568)
   // assert.deepEqual(solution02(list), 3555057453229)
 })
