@@ -1,102 +1,101 @@
-import assert from 'assert';
-import '../../utils/polyfills.js';
+import assert from 'assert'
+import read from '../../utils/read.js'
 
-const SPACES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
-function isGameOn([player1, player2]) {
-  return player1.points < 1000 & player2.points < 1000;
+const OPERATIONS = {
+  '+': (a, b) => a + b,
+  '-': (a, b) => a - b,
+  '*': (a, b) => a * b,
+  '/': (a, b) => a / b,
 }
 
-function roll(dice) {
-  dice.d1 += 3;
-  dice.d2 += 3;
-  dice.d3 += 3;
-  dice.count += 3;
-
-  if (dice.d1 > 100) dice.d1 = dice.d1 - 100;
-  if (dice.d2 > 100) dice.d2 = dice.d2 - 100;
-  if (dice.d3 > 100) dice.d3 = dice.d3 - 100;
+const INV = {
+  '+': OPERATIONS['-'],
+  '-': OPERATIONS['+'],
+  '*': OPERATIONS['/'],
+  '/': OPERATIONS['*'],
 }
 
-function move(player, dice) {
-  player.position += dice.d1 + dice.d2 + dice.d3;
-  player.points += SPACES[player.position % 10];
+const NON_COMM = ['-', '/']
+
+function buildMonkeyTree(list) {
+  const monkeys = list.reduce((acc, monkey) => {
+    const [name, opStr] = monkey.split(': ')
+    const [other00, op, other01] = opStr.match(/[^\s"']+|"([^"]*)"|'([^']*)'/g)
+
+    return {
+      ...acc,
+      [name]: { other00, op, other01, yell: () => parseInt(other00, 10) },
+    }
+  }, {})
+
+  Object.keys(monkeys).forEach((name) => {
+    const { other00, op, other01 } = monkeys[name]
+
+    if (op) {
+      monkeys[name].yell = () => {
+        return OPERATIONS[op](monkeys[other00].yell(), monkeys[other01].yell())
+      }
+    }
+  })
+
+  return monkeys
 }
 
-function solution01(p1, p2) {
-  const [player1, player2] = [
-    { position: p1 - 1, points: 0 },
-    { position: p2 - 1, points: 0 }
-  ];
-  const dice = { d1: -2, d2: -1, d3: 0, count: 0 };
-  const players = [player1, player2];
+function solution01(list) {
+  const monkeys = buildMonkeyTree(list)
 
-  while (isGameOn(players)) {
-    const idx = dice.count % players.length;
-    roll(dice);
-    move(players[idx], dice);
+  return monkeys.root.yell()
+}
+
+function getChain(monkeys, start = 'humn', path = []) {
+  if (start === 'root') return path.reverse()
+
+  const parent = Object.keys(monkeys).find((name) => {
+    const { other00, other01 } = monkeys[name]
+    return other00 === start || other01 === start
+  })
+  const { other00, op, other01 } = monkeys[parent]
+  const next =
+    start === other00 ? { next: other01, p: 1 } : { next: other00, p: 0 }
+
+  return getChain(monkeys, parent, [
+    ...path,
+    { ...next, parent, op, other00, other01 },
+  ])
+}
+
+function solution02(list) {
+  const monkeys = buildMonkeyTree(list)
+  const chain = getChain(monkeys)
+  const humanValue = chain.reduce((acc, curr) => {
+    if (curr.parent === 'root') return monkeys[curr.next].yell()
+
+    const op = OPERATIONS[curr.op]
+    const inv = INV[curr.op]
+
+    if (curr.p === 0 && NON_COMM.includes(curr.op)) {
+      return op(monkeys[curr.next].yell(), acc)
+    }
+
+    return inv(acc, monkeys[curr.next].yell())
+  }, 0)
+
+  monkeys.humn.yell = () => humanValue
+
+  monkeys.root.yell = () => {
+    const { other00, other01 } = monkeys.root
+    return monkeys[other00].yell() === monkeys[other01].yell()
   }
 
-  if (player1.points < player2.points) {
-    return player1.points * dice.count;
-  }
-  return player2.points * dice.count;
+  return monkeys.humn.yell()
 }
 
-function getScoreFrequency() {
-  return [].nMatrix(3).reduce((result, d1, i) => {
-    [].nMatrix(3).forEach((d2, j) => {
-      [].nMatrix(3).forEach((d3, k) => {
-        const count = i + j + k + 3;
-        result[count] = (result[count] || 0) + 1;
-      });
-    });
-    return result;
-  }, {});
-}
+read('test.txt').then((list) => {
+  assert.deepEqual(solution01(list), 152)
+  assert.deepEqual(solution02(list), 301)
+})
 
-function goStrange(players, dice) {
-  const { scoreFrequency } = dice;
-  const [player1, player2] = players;
-
-  if (player1.points >= 21) return 1;
-  if (player2.points >= 21) return 0;
-
-  return Object.keys(scoreFrequency)
-    .map(Number)
-    .reduce((result, score) => {
-      const player = players[dice.count % 2];
-      const prevPosition = player.position;
-      const prevPoints = player.points;
-
-      player.position += score;
-      player.points += SPACES[player.position % 10];
-      dice.count++;
-
-      result += scoreFrequency[score] * goStrange(players, dice);
-
-      // go back to previous play
-      player.position = prevPosition;
-      player.points = prevPoints;
-      dice.count--;
-
-      return result;
-    }, 0);
-}
-
-function solution02(p1, p2) {
-  const [player1, player2] = [
-    { position: p1 - 1, points: 0 },
-    { position: p2 - 1, points: 0 }
-  ];
-  const scoreFrequency = getScoreFrequency();
-  const dice = { count: 0, scoreFrequency };
-
-  return goStrange([player1, player2], dice);
-}
-
-assert.deepEqual(solution01(4, 8), 739785);
-assert.deepEqual(solution02(4, 8), 444356092776315);
-
-assert.deepEqual(solution01(6, 2), 926610);
-assert.deepEqual(solution02(6, 2), 146854918035875);
+read('input.txt').then((list) => {
+  assert.deepEqual(solution01(list), 31017034894002)
+  assert.deepEqual(solution02(list), 3555057453229)
+})

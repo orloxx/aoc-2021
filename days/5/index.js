@@ -1,104 +1,57 @@
-import assert from 'assert';
-import read from '../../utils/read.js';
+import assert from 'assert'
+import read from '../../utils/read.js'
 
-function plotVertical(matrix, y1, y2, x) {
-  // down
-  if (y1 < y2) {
-    for (let i = y1; i <= y2; i++) {
-      matrix[i][x]++;
-    }
-  }
-  // up
-  else {
-    for (let i = y2; i <= y1; i++) {
-      matrix[i][x]++;
-    }
-  }
+const testStacks = () => ({
+  1: ['Z', 'N'],
+  2: ['M', 'C', 'D'],
+  3: ['P'],
+})
+
+const inputStacks = () => ({
+  1: ['D', 'B', 'J', 'V'],
+  2: ['P', 'V', 'B', 'W', 'R', 'D', 'F'],
+  3: ['R', 'G', 'F', 'L', 'D', 'C', 'W', 'Q'],
+  4: ['W', 'J', 'P', 'M', 'L', 'N', 'D', 'B'],
+  5: ['H', 'N', 'B', 'P', 'C', 'S', 'Q'],
+  6: ['R', 'D', 'B', 'S', 'N', 'G'],
+  7: ['Z', 'B', 'P', 'M', 'Q', 'F', 'S', 'H'],
+  8: ['W', 'L', 'F'],
+  9: ['S', 'V', 'F', 'M', 'R'],
+})
+
+function getString(stack) {
+  return Object.keys(stack).reduce((acc, curr) => {
+    return `${acc}${stack[curr].pop()}`
+  }, '')
 }
 
-function plotHorizontal(matrix, x1, x2, y) {
-  // right
-  if (x1 < x2) {
-    for (let i = x1; i <= x2; i++) {
-      matrix[y][i]++;
+function solution01(list, stack) {
+  list.forEach((line) => {
+    const [move, from, to] = line.match(/[0-9]+/g).toNumber()
+
+    for (let i = 0; i < move; i += 1) {
+      stack[to].push(stack[from].pop())
     }
-  }
-  // left
-  else {
-    for (let i = x2; i <= x1; i++) {
-      matrix[y][i]++;
-    }
-  }
+  })
+
+  return getString(stack)
 }
 
-function plotDiagonal(matrix, p1, p2) {
-  let [x1, y1] = p1.split(',');
-  let [x2, y2] = p2.split(',');
-  const slope = (y2 - y1) / (x2 - x1);
-  x1 = parseInt(x1);
-  x2 = parseInt(x2);
-  y1 = parseInt(y1);
+function solution02(list, stack) {
+  list.forEach((line) => {
+    const [move, from, to] = line.match(/[0-9]+/g).toNumber()
+    stack[to].push(...stack[from].splice(stack[from].length - move))
+  })
 
-  // upward to the right
-  if (slope < 0 && x1 < x2) {
-    for (let i = x1; i <= x2; i++) {
-      matrix[y1--][x1++]++;
-    }
-  }
-  // downward to the left
-  else if (slope < 0 && x1 > x2) {
-    for (let i = x1; i >= x2; i--) {
-      matrix[y1++][x1--]++;
-    }
-  }
-  // downward to the right
-  else if (slope > 0 && x1 < x2) {
-    for (let i = x1; i <= x2; i++) {
-      matrix[y1++][x1++]++;
-    }
-  }
-  // upward to the left
-  else if (slope > 0 && x1 > x2) {
-    for (let i = x1; i >= x2; i--) {
-      matrix[y1--][x1--]++;
-    }
-  }
+  return getString(stack)
 }
 
-function getPlots(list, { size = 1000, d } = {}) {
-  return list.reduce((prev, curr) => {
-    const [p1, p2] = curr.split(' -> ');
-    const [x1, y1] = p1.split(',');
-    const [x2, y2] = p2.split(',');
+read('test.txt').then((list) => {
+  assert.deepEqual(solution01(list, testStacks()), 'CMZ')
+  assert.deepEqual(solution02(list, testStacks()), 'MCD')
+})
 
-    if (x1 === x2) {
-      plotVertical(prev, parseInt(y1), parseInt(y2), parseInt(x1));
-    } else if (y1 === y2) {
-      plotHorizontal(prev, parseInt(x1), parseInt(x2), parseInt(y1));
-    } else if (d) {
-      plotDiagonal(prev, p1, p2);
-    }
-
-    return prev;
-  }, [].n2DMatrix(size));
-}
-
-function solution01(list) {
-  const plots = getPlots(list);
-  return plots.flat2DMatrix().filter((n) => n > 1).length;
-}
-
-function solution02(list) {
-  const plots = getPlots(list, { d: true });
-  return plots.flat2DMatrix().filter((n) => n > 1).length;
-}
-
-read('./5/test.txt').then((list) => {
-  assert.deepEqual(solution01(list), 5);
-  assert.deepEqual(solution02(list), 12);
-});
-
-read('./5/input.txt').then((list) => {
-  assert.deepEqual(solution01(list), 5690);
-  assert.deepEqual(solution02(list), 17741);
-});
+read('input.txt').then((list) => {
+  assert.deepEqual(solution01(list, inputStacks()), 'BSDMQFLSP')
+  assert.deepEqual(solution02(list, inputStacks()), 'PGSQBFLDP')
+})

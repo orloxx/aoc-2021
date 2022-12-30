@@ -1,67 +1,109 @@
-import assert from 'assert';
-import read from '../../utils/read.js';
+import assert from 'assert'
+import read from '../../utils/read.js'
 
-function getPairsCount(pairs, rules) {
-  return Object.keys(pairs).reduce((prev, pair) => {
-    const count = pairs[pair];
-    const pair01 = pair[0] + rules[pair];
-    const pair02 = rules[pair] + pair[1];
+const SPACE = ' '
+const BLOCK = '█'
+const O = 'o'
+const [Ix, Iy] = [500, 0]
 
-    prev[pair01] = (prev[pair01] || 0) + count;
-    prev[pair02] = (prev[pair02] || 0) + count;
+function parseCave(list) {
+  const size = 1100
+  const cave = [].n2DMatrix(size, SPACE)
+  let floor = 0
 
-    return prev;
-  }, {})
+  list.forEach((line) => {
+    const stoneTrace = line
+      .split(' -> ')
+      .map((coordinates) => coordinates.split(',').toNumber())
+
+    stoneTrace.forEach(([x, y], i) => {
+      floor = Math.max(floor, y)
+      if (i === stoneTrace.length - 1) return
+
+      const [x1, y1] = stoneTrace[i + 1]
+      const delta = x === x1 ? y1 - y : x1 - x
+      const dir = delta / Math.abs(delta)
+
+      for (let j = 0; j <= Math.abs(delta); j++) {
+        // draw vertical
+        if (x === x1) cave[y + j * dir][x] = BLOCK
+        // draw horizontal
+        else if (y === y1) cave[y][x + j * dir] = BLOCK
+      }
+    }, cave)
+  })
+
+  cave.splice(floor + 3)
+
+  return cave
 }
 
-function calculateEdgeDelta({ pairs, last }) {
-  const letterMap = Object.keys(pairs).reduce((prev, pair) => {
-    const [letter] = pair;
-    prev[letter] = (prev[letter] || 0) + pairs[pair];
-    if (pair === last) {
-      const [, lastLetter] = last;
-      prev[lastLetter] = (prev[lastLetter] || 0) + 1;
+function fallingSand(cave) {
+  const newCave = cave
+  let [ix, iy] = [Ix, Iy]
+  const stopFalling = () =>
+    cave[iy + 1][ix] !== SPACE &&
+    cave[iy + 1][ix - 1] !== SPACE &&
+    cave[iy + 1][ix + 1] !== SPACE
+
+  try {
+    while (!stopFalling()) {
+      if (cave[iy + 1][ix] === SPACE) {
+        // do nothing
+      } else if (cave[iy + 1][ix - 1] === SPACE) {
+        ix--
+      } else if (cave[iy + 1][ix + 1] === SPACE) {
+        ix++
+      }
+      iy++
     }
-    return prev;
-  }, {});
+  } catch (error) {
+    return false
+  }
 
-  const sorted = Object.values(letterMap).sortIntegers();
-  return sorted[sorted.length - 1] - sorted[0];
+  if (iy === Iy && ix === Ix) return false
+
+  newCave[iy][ix] = O
+  return true
 }
 
-function getPolymer(list, length = 10) {
-  const rules = list.slice(1).reduce((prev, rule) => {
-    const [start, end] = rule.split(' -> ');
-    return { ...prev, [start]: end };
-  }, {});
+function addFloor(cave) {
+  const newCave = cave
+  const lastIdx = newCave.length - 1
 
-  return calculateEdgeDelta([].nMatrix(length).reduce((prev) => ({
-    pairs: getPairsCount(prev.pairs, rules),
-    last: rules[prev.last] + prev.last[1]
-  }), {
-    pairs: [...list[0]].reduce((prev, c, i, arr) => {
-      if (i === arr.length - 1) return prev;
-      const pair = `${arr[i]}${arr[i + 1]}`
-      return { ...prev, [pair]: (prev[pair] || 0) + 1 };
-    }, {}),
-    last: list[0].slice(-2)
-  }));
+  newCave[lastIdx] = newCave[lastIdx].map(() => BLOCK)
+}
+
+function startFalling({ list, hasFloor = false }) {
+  const cave = parseCave(list)
+  let sand = 0
+
+  if (hasFloor) {
+    addFloor(cave)
+    sand = 1
+  }
+
+  while (fallingSand(cave)) {
+    sand++
+  }
+
+  return sand
 }
 
 function solution01(list) {
-  return getPolymer(list);
+  return startFalling({ list })
 }
 
 function solution02(list) {
-  return getPolymer(list, 40);
+  return startFalling({ list, hasFloor: true })
 }
 
-read('./14/test.txt').then((list) => {
-  assert.deepEqual(solution01(list), 1588);
-  assert.deepEqual(solution02(list), 2188189693529);
-});
+read('test.txt').then((list) => {
+  assert.deepEqual(solution01(list), 24)
+  assert.deepEqual(solution02(list), 93)
+})
 
-read('./14/input.txt').then((list) => {
-  assert.deepEqual(solution01(list), 3058);
-  assert.deepEqual(solution02(list), 3447389044530);
-});
+read('input.txt').then((list) => {
+  assert.deepEqual(solution01(list), 873)
+  assert.deepEqual(solution02(list), 24813)
+})

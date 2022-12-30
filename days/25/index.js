@@ -1,68 +1,57 @@
-import assert from 'assert';
-import read from '../../utils/read.js';
+import assert from 'assert'
+import read from '../../utils/read.js'
 
-function * seaCucumbers(matrix) {
-  let moving = true;
-  let step = 0;
+const SNAFU_MAP = {
+  '-2': '=',
+  '-1': '-',
+  0: 0,
+  1: 1,
+  2: 2,
+}
 
-  matrix = matrix.map((row) => [...row]);
-  while (moving) {
-    moving = false;
-    // move east-side
-    matrix.forEach((row, i) => {
-      row.forEach((n, j) => {
-        const J = j === 0 ? row.length - 1 : j - 1;
-        if (n === '.' && matrix[i][J] === '>') {
-          matrix[i][J] = j === 0 ? 'x' : '.';
-          matrix[i][j] = '<';
-        }
-      });
-    });
-    // move south-side
-    matrix.forEach((row, i) => {
-      row.forEach((n, j) => {
-        const I = i === 0 ? matrix.length - 1 : i - 1;
-        if ((n === '.' || n === 'x') && matrix[I][j] === 'v') {
-          matrix[I][j] = i === 0 ? 'y' : '.';
-          matrix[i][j] = '^';
-        }
-      });
-    });
-    // convert moved
-    matrix.forEach((row, i) => {
-      row.forEach((n, j) => {
-        if (n === '<') {
-          moving = true;
-          matrix[i][j] = '>';
-        } else if (n === '^') {
-          moving = true;
-          matrix[i][j] = 'v';
-        } else if (n === 'x' || n === 'y') {
-          moving = true;
-          matrix[i][j] = '.';
-        }
-      });
-    });
+function parseSnafuDigit(d) {
+  if (d === '=') return -2
+  if (d === '-') return -1
+  return parseInt(d, 10)
+}
 
-    yield { matrix, step: ++step };
+function snafuToDecimal(snafu) {
+  return snafu
+    .split('')
+    .reverse()
+    .map((d, i) => {
+      return 5 ** i * parseSnafuDigit(d)
+    })
+    .sumAll()
+}
+
+function decimalToSnafu(d) {
+  let nums = d.toString(5).split('').toNumber()
+  let idx = nums.findIndex((num) => num > 2)
+  while (idx !== -1) {
+    nums[idx] -= 5
+    if (idx > 0) {
+      nums[idx - 1]++
+    } else {
+      nums = [1, ...nums]
+    }
+    idx = nums.findIndex((num) => num > 2)
   }
+  return nums.map((num) => SNAFU_MAP[num]).join('')
 }
 
 function solution01(list) {
-  let state
-  for (state of seaCucumbers(list)) {}
-  return state.step;
+  const decimalSum = list.reduce((acc, snafu) => {
+    return acc + snafuToDecimal(snafu)
+  }, 0)
+
+  return decimalToSnafu(decimalSum)
 }
 
-function solution02(list) {
-}
+read('test.txt').then((list) => {
+  assert.deepEqual(solution01(list), '2=-1=0')
+})
 
-read('./25/test.txt').then((list) => {
-  assert.deepEqual(solution01(list), 58);
-  // assert.deepEqual(solution02(list), 3351);
-});
-
-read('./25/input.txt').then((list) => {
-  assert.deepEqual(solution01(list), 557);
-  // assert.deepEqual(solution02(list), 19743);
-});
+read('input.txt').then((list) => {
+  assert.deepEqual(solution01(list), '2---0-1-2=0=22=2-011')
+})

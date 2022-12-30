@@ -1,43 +1,48 @@
-import assert from 'assert';
-import read from '../../utils/read.js';
+import assert from 'assert'
+import read from '../../utils/read.js'
 
-function getCoordinates(list, pathMap) {
-  return list.reduce((prev, curr) => {
-    const [dir, value] = curr.split(' ');
-    return pathMap[dir](prev, parseInt(value, 10));
-  }, { x: 0, y: 0, aim: 0 });
+const OPTIONS = ['rock', 'paper', 'scissors']
+const OPPONENT = ['A', 'B', 'C']
+const MINE = ['X', 'Y', 'Z']
+
+const WIN = { rock: OPTIONS[2], paper: OPTIONS[0], scissors: OPTIONS[1] }
+const LOSE = { rock: OPTIONS[1], paper: OPTIONS[2], scissors: OPTIONS[0] }
+
+function calculatePoints(opponent, mine) {
+  const points = OPTIONS.indexOf(mine) + 1
+  if (WIN[mine] === opponent) return points + 6
+  if (LOSE[mine] === opponent) return points
+  return points + 3
+}
+
+function getSolution(list, mineSelector) {
+  return list.reduce((acc, curr) => {
+    const [o, m] = curr.split(' ')
+    const opponent = OPTIONS[OPPONENT.indexOf(o)]
+    const mine = mineSelector(m, opponent)
+
+    return acc + calculatePoints(opponent, mine)
+  }, 0)
 }
 
 function solution01(list) {
-  const coordinates = getCoordinates(list, {
-    forward: (obj, value) => ({ ...obj, x: obj.x + value }),
-    down: (obj, value) => ({ ...obj, y: obj.y + value }),
-    up: (obj, value) => ({ ...obj, y: obj.y - value }),
-  })
-
-  return coordinates.x * coordinates.y;
+  return getSolution(list, (m) => OPTIONS[MINE.indexOf(m)])
 }
 
 function solution02(list) {
-  const coordinates = getCoordinates(list, {
-    forward: (obj, value) => ({
-      ...obj,
-      x: obj.x + value,
-      y: obj.y + obj.aim * value
-    }),
-    down: (obj, value) => ({ ...obj, aim: obj.aim + value }),
-    up: (obj, value) => ({ ...obj, aim: obj.aim - value }),
+  return getSolution(list, (option, choice) => {
+    if (option === 'X') return WIN[choice]
+    if (option === 'Y') return choice
+    return LOSE[choice]
   })
-
-  return coordinates.x * coordinates.y;
 }
 
-read('./2/test.txt').then((list) => {
-  assert.deepEqual(solution01(list), 150);
-  assert.deepEqual(solution02(list), 900);
-});
+read('test.txt').then((list) => {
+  assert.deepEqual(solution01(list), 15)
+  assert.deepEqual(solution02(list), 12)
+})
 
-read('./2/input.txt').then((list) => {
-  assert.deepEqual(solution01(list), 1459206);
-  assert.deepEqual(solution02(list), 1320534480);
-});
+read('input.txt').then((list) => {
+  assert.deepEqual(solution01(list), 13268)
+  assert.deepEqual(solution02(list), 15508)
+})

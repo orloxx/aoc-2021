@@ -1,49 +1,30 @@
-import assert from 'assert';
-import read from '../../utils/read.js';
+import assert from 'assert'
+import read from '../../utils/read.js'
 
-function generate(list, days) {
-  let school = list[0].split(',')
-    .map((fish) => parseInt(fish, 10));
-
-  let hash = school
-    .reduce((prev, fish) => ({
-      ...prev,
-      [fish]: prev[fish] ? ++prev[fish] : 1
-    }), {});
-
-  for (let i = 0; i < days; i++) {
-    for (let day = 0; day <= 9; day++) {
-      hash[`${day - 1}`] = hash[`${day}`] || 0;
+function calculateStream(list, steps) {
+  return list.map((stream) => {
+    for (let i = 0; i < stream.length; i++) {
+      const subStream = stream.substring(i, i + steps).split('')
+      if (subStream.areDistinct()) return i + steps
     }
-
-    if (hash['-1']) {
-      hash['6'] = hash['6'] ? hash['6'] + hash['-1'] : hash['-1'];
-      hash['8'] = hash['-1'];
-      hash['-1'] = 0;
-    }
-  }
-
-  return Object.keys(hash)
-    .filter((h) => h !== '-1')
-    .reduce((prev, curr) => {
-      return prev + hash[curr];
-    }, 0);
+    return null
+  })
 }
 
 function solution01(list) {
-  return generate(list, 80);
+  return calculateStream(list, 4)
 }
 
 function solution02(list) {
-  return generate(list, 256);
+  return calculateStream(list, 14)
 }
 
-read('./6/test.txt').then((list) => {
-  assert.deepEqual(solution01(list), 5934);
-  assert.deepEqual(solution02(list), 26984457539);
-});
+read('test.txt').then((list) => {
+  assert.deepEqual(solution01(list), [7, 5, 6, 10, 11])
+  assert.deepEqual(solution02(list), [19, 23, 23, 29, 26])
+})
 
-read('./6/input.txt').then((list) => {
-  assert.deepEqual(solution01(list), 358214);
-  assert.deepEqual(solution02(list), 1622533344325);
-});
+read('input.txt').then((list) => {
+  assert.deepEqual(solution01(list), [1702])
+  assert.deepEqual(solution02(list), [3559])
+})
