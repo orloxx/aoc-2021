@@ -15,6 +15,7 @@ module.exports = {
     'import/prefer-default-export': 0,
     'no-console': 0,
     'no-extend-native': 0,
+    'no-loop-func': 0,
     'no-plusplus': 0,
     'prefer-destructuring': 0,
   },
