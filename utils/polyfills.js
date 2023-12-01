@@ -200,6 +200,21 @@ const POLYFILLS = {
     }
     assert.deepEqual('10R5L5R'.getLetters(), ['R', 'L', 'R'])
   },
+
+  getAllIndex() {
+    String.prototype.getAllIndex = function (search) {
+      const result = []
+      let i = this.indexOf(search)
+
+      while (i >= 0) {
+        result.push(i)
+        i = this.indexOf(search, i + 1)
+      }
+
+      return result
+    }
+    assert.deepEqual('10R5L5R'.getAllIndex('R'), [2, 6])
+  },
 }
 
 Object.keys(POLYFILLS).forEach((funcName) => POLYFILLS[funcName]())
