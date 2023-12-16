@@ -18,6 +18,31 @@ const DIR = {
   E: [0, 1],
 }
 
+const TURNS = ['7', 'J', 'L', 'F']
+// D: Derecha, I: Izquierda
+const TURN = {
+  7: { [DIR.E]: 'D', [DIR.N]: 'I' },
+  J: { [DIR.S]: 'D', [DIR.E]: 'I' },
+  L: { [DIR.W]: 'D', [DIR.S]: 'I' },
+  F: { [DIR.N]: 'D', [DIR.W]: 'I' },
+}
+
+/**
+ * Look direction by direction when looking to the right
+ * When looking to the left, reverse the axis
+ *
+ * [0,1] E -> [1, 0] S = [1, -1] (turns right)
+ * [0,1] E -> [-1, 0] N = [-1, -1] (turns left)
+ *
+ * c = turn coefficient
+ */
+const LOOK_DIR = {
+  [DIR.E]: (c = 1) => [c, -1],
+  [DIR.S]: (c = 1) => [-1, -c],
+  [DIR.W]: (c = 1) => [-c, 1],
+  [DIR.N]: (c = 1) => [1, c],
+}
+
 function findTile([N, W, S, E]) {
   return Object.keys(TILES).filter((key) => {
     const [n, w, s, e] = TILES[key]
@@ -69,52 +94,135 @@ function* navigate({ list, start, direction }) {
   const position = [...start]
   let newDirection = [...direction]
 
-  while (true) {
+  while (newDirection) {
     position[0] += newDirection[0]
     position[1] += newDirection[1]
 
     const flags = TILES[list[position[0]][position[1]]]
+    const dirFrom = newDirection
     const directions = findDirections({ list, start: position, flags })
     newDirection = directions.find(
       ([d1, d2]) => d1 + newDirection[0] !== 0 || d2 + newDirection[1] !== 0
     )
 
-    yield position
+    yield { position: [...position], newDirection, dirFrom }
   }
+
+  yield null
 }
 
-function solution01(list) {
+function getNavigationPointers(list) {
   const start = findStart(list)
   const [dir1, dir2] = findDirections({ list, start })
   const [nav1, nav2] = [
     navigate({ list, start, direction: dir1 }),
     navigate({ list, start, direction: dir2 }),
   ]
+  return { start, nav1, nav2 }
+}
+
+function solution01(list) {
+  const { nav1, nav2 } = getNavigationPointers(list)
   let [p1, p2] = [-1, -1]
   let count = 0
 
   do {
-    p1 = nav1.next().value
-    p2 = nav2.next().value
+    p1 = nav1.next().value.position
+    p2 = nav2.next().value.position
     count++
   } while (!(p1[0] === p2[0] && p1[1] === p2[1]))
 
   return count
 }
 
-function solution02(list) {}
+function getPipePositions({ list, nav }) {
+  const pipes = []
+  let pos = 1
+
+  while (pos) {
+    // current pipe position
+    pos = nav.next().value
+
+    if (pos) {
+      const [y, x] = pos.position
+      // pipe type
+      const pipe = list[y][x]
+
+      // If it's a turn pipe
+      if (TURNS.includes(pipe)) {
+        const turn = TURN[pipe]
+
+        // Save the pipe position and the turn direction
+        pipes.push({ pipe, pos, turn: turn[pos.dirFrom] })
+      } else {
+        // running straight
+        pipes.push({ pipe, pos, turn: false })
+      }
+    }
+  }
+
+  return pipes
+}
+
+function solution02(list) {
+  const { nav1 } = getNavigationPointers(list)
+  const pipes = getPipePositions({ list, nav: nav1 })
+  const pipesPositions = pipes.map(({ pos }) => pos.position)
+  const rightTurns = pipes.filter(({ turn }) => turn === 'D')
+  const leftTurns = pipes.filter(({ turn }) => turn === 'I')
+  // 1 = mostly right turns, -1 = mostly left turns
+  const turnCoefficient =
+    Math.abs(rightTurns.length - leftTurns.length) /
+    (rightTurns.length - leftTurns.length)
+  const innerTiles = new Set()
+
+  const isPipe = ([y, x]) =>
+    pipesPositions.some(([py, px]) => py === y && px === x) ||
+    list[y][x] === 'S'
+
+  const swipeDirection = ({ position, direction }) => {
+    const [dirY, dirX] = direction
+    const [lookDirY, lookDirX] = LOOK_DIR[direction](turnCoefficient)
+    const [swipeY, swipeX] = [dirY + lookDirY, dirX + lookDirX]
+    let [y, x] = position
+
+    while (!isPipe([y + swipeY, x + swipeX])) {
+      const inner = `${y + swipeY},${x + swipeX}`
+      innerTiles.add(inner)
+      y += swipeY
+      x += swipeX
+    }
+  }
+
+  pipes.forEach((pipe) => {
+    swipeDirection({ position: pipe.pos.position, direction: pipe.pos.dirFrom })
+
+    if (!pipe.pos.newDirection) return
+
+    swipeDirection({
+      position: pipe.pos.position,
+      direction: pipe.pos.newDirection,
+    })
+  })
+
+  return innerTiles.size
+}
 
 read('test01.txt').then((list) => {
   assert.deepEqual(solution01(list), 4)
-  // assert.deepEqual(solution02(list), 2)
+  assert.deepEqual(solution02(list), 1)
 })
 
 read('test02.txt').then((list) => {
   assert.deepEqual(solution01(list), 8)
-  // assert.deepEqual(solution02(list), 2)
+  assert.deepEqual(solution02(list), 1)
+})
+
+read('test03.txt').then((list) => {
+  assert.deepEqual(solution02(list), 10)
 })
 
 read('input.txt').then((list) => {
   assert.deepEqual(solution01(list), 6956)
-  // assert.deepEqual(solution02(list), 1041)
+  assert.deepEqual(solution02(list), 455)
 })
