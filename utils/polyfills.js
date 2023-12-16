@@ -213,7 +213,45 @@ const POLYFILLS = {
 
       return result
     }
+    Array.prototype.getAllIndex = String.prototype.getAllIndex
     assert.deepEqual('10R5L5R'.getAllIndex('R'), [2, 6])
+    assert.deepEqual('10R5L5R'.split('').getAllIndex('R'), [2, 6])
+  },
+
+  rotateClockwise() {
+    Array.prototype.rotateClockwise = function () {
+      return this[0].map((_, i) => this.map((row) => row[i]).reverse())
+    }
+    assert.deepEqual(
+      [
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9],
+      ].rotateClockwise(),
+      [
+        [7, 4, 1],
+        [8, 5, 2],
+        [9, 6, 3],
+      ]
+    )
+  },
+
+  rotateCounterClockwise() {
+    Array.prototype.rotateCounterClockwise = function () {
+      return this[0].map((_, i) => this.map((row) => row[row.length - 1 - i]))
+    }
+    assert.deepEqual(
+      [
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9],
+      ].rotateCounterClockwise(),
+      [
+        [3, 6, 9],
+        [2, 5, 8],
+        [1, 4, 7],
+      ]
+    )
   },
 }
 
