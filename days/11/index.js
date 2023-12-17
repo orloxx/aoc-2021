@@ -17,7 +17,7 @@ function getEmptySpace(empty, d1, d2, expansion) {
   return empty
     .map((d) => {
       if (d1 < d2 && d1 < d && d < d2) return expansion - 1
-      if (d1 > d2 && d1 > d && d > d2) return -(expansion - 1)
+      if (d1 > d2 && d1 > d && d > d2) return 1 - expansion
       return 0
     })
     .filter((d) => d !== 0)
