@@ -253,6 +253,17 @@ const POLYFILLS = {
       ]
     )
   },
+
+  replaceAt() {
+    String.prototype.replaceAt = function (index, replacement) {
+      return (
+        this.substring(0, index) +
+        replacement +
+        this.substring(index + replacement.length)
+      )
+    }
+    assert.deepEqual('abc'.replaceAt(1, 'z'), 'azc')
+  },
 }
 
 Object.keys(POLYFILLS).forEach((funcName) => POLYFILLS[funcName]())
