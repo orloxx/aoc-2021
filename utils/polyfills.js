@@ -60,6 +60,8 @@ const POLYFILLS = {
       for (let i = 0; i < this.length; ++i) n = lcm2(this[i], n)
       return n
     }
+    assert.deepEqual([36, 8, 16].gcd(), 4)
+    assert.deepEqual([44, 5, 63].lcm(), 13860)
   },
 
   reduceBlock() {
