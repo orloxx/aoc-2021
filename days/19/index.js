@@ -85,6 +85,10 @@ function solution01(list) {
   }, 0)
 }
 
+function calculateCombinations({ x, m, a, s }) {
+  return [x[1] - x[0], m[1] - m[0], a[1] - a[0], s[1] - s[0]].multiplyAll()
+}
+
 function solution02(list) {
   const { flow } = parseInput(list)
   const graph = Object.keys(flow).reduce(
@@ -98,34 +102,30 @@ function solution02(list) {
   const G = new Graph(graph)
   G.traverse('in', 'A')
 
-  const conditions = G.allPaths.map((path) => {
-    return path.reduce(
-      (acc, node, i) => {
-        if (i === path.length - 1) return acc
+  const allCombinations = G.allPaths
+    .map((path) => {
+      return path.reduce(
+        (acc, node, i) => {
+          if (i === path.length - 1) return acc
 
-        const then = path[i + 1]
-        const { paramName, operator, compareTo } = flow[node].find(
-          (op) => op.then === then
-        )
-        if (operator && operator === '>')
-          return { ...acc, [paramName]: [compareTo, acc[paramName][1]] }
-        if (operator && operator === '<')
-          return { ...acc, [paramName]: [acc[paramName][0], compareTo] }
+          const then = path[i + 1]
+          const { paramName, operator, compareTo } = flow[node].find(
+            (op) => op.then === then
+          )
+          if (operator && operator === '>')
+            return { ...acc, [paramName]: [compareTo, acc[paramName][1]] }
+          if (operator && operator === '<')
+            return { ...acc, [paramName]: [acc[paramName][0], compareTo] }
 
-        return acc
-      },
-      { x: [1, 4001], m: [1, 4001], a: [1, 4001], s: [1, 4001] }
-    )
-  })
-
-  const probabilities = conditions
-    .map((condition) => {
-      const { x, m, a, s } = condition
-      const value = [x[1] - x[0], m[1] - m[0], a[1] - a[0], s[1] - s[0]]
-
-      return { ...condition, value: value.multiplyAll() }
+          return acc
+        },
+        { x: [1, 4001], m: [1, 4001], a: [1, 4001], s: [1, 4001] }
+      )
     })
-    .sort((a, b) => b.value - a.value)
+    .map((xmasSet) => {
+      return { ...xmasSet, combination: calculateCombinations(xmasSet) }
+    })
+    .sort((a, b) => b.combination - a.combination)
 
   return 0
 }
