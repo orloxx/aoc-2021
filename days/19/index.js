@@ -1,6 +1,7 @@
 import assert from 'assert'
 import read from '../../utils/read.js'
 import Graph from '../../utils/path-finding.js'
+import { calculateCombinations } from '../../utils/logic-set.js'
 
 const OP = {
   '>': (a, b) => a > b,
@@ -85,8 +86,26 @@ function solution01(list) {
   }, 0)
 }
 
-function calculateCombinations({ x, m, a, s }) {
-  return [x[1] - x[0], m[1] - m[0], a[1] - a[0], s[1] - s[0]].multiplyAll()
+function getRangesFromOperation(prev, operation) {
+  const { paramName, operator, compareTo } = operation
+
+  if (operator && operator === '>')
+    return { ...prev, [paramName]: [compareTo + 1, prev[paramName][1]] }
+  if (operator && operator === '<')
+    return { ...prev, [paramName]: [prev[paramName][0], compareTo - 1] }
+
+  return false
+}
+
+function getOppositeRangesFromOperation(prev, operation) {
+  const { paramName, operator, compareTo } = operation
+
+  if (operator && operator === '>')
+    return { ...prev, [paramName]: [prev[paramName][0], compareTo] }
+  if (operator && operator === '<')
+    return { ...prev, [paramName]: [compareTo, prev[paramName][1]] }
+
+  return false
 }
 
 function solution02(list) {
@@ -100,7 +119,8 @@ function solution02(list) {
     { A: [], R: [] }
   )
   const G = new Graph(graph)
-  G.traverse('in', 'A')
+  const END = 'A'
+  G.traverse('in', END)
 
   const allCombinations = G.allPaths
     .map((path) => {
@@ -109,25 +129,27 @@ function solution02(list) {
           if (i === path.length - 1) return acc
 
           const then = path[i + 1]
-          const { paramName, operator, compareTo } = flow[node].find(
-            (op) => op.then === then
+          const operationIdx = flow[node].findIndex(
+            (op) => op.then === then && !op.visited
           )
-          if (operator && operator === '>')
-            return { ...acc, [paramName]: [compareTo, acc[paramName][1]] }
-          if (operator && operator === '<')
-            return { ...acc, [paramName]: [acc[paramName][0], compareTo] }
+          const flowOperation = flow[node].slice(0, operationIdx + 1)
+          const ranges = flowOperation.reduce((prev, op, j) => {
+            if (operationIdx === j) {
+              if (then === END) flow[node][j].visited = true
+              return getRangesFromOperation(prev, op) || prev
+            }
 
-          return acc
+            return getOppositeRangesFromOperation(prev, op) || prev
+          }, acc)
+
+          return ranges
         },
-        { x: [1, 4001], m: [1, 4001], a: [1, 4001], s: [1, 4001] }
+        { x: [1, 4000], m: [1, 4000], a: [1, 4000], s: [1, 4000] }
       )
     })
-    .map((xmasSet) => {
-      return { ...xmasSet, combination: calculateCombinations(xmasSet) }
-    })
-    .sort((a, b) => b.combination - a.combination)
+    .map(({ x, m, a, s }) => calculateCombinations([x, m, a, s]))
 
-  return 0
+  return allCombinations.sumAll()
 }
 
 read('test.txt').then((list) => {
@@ -137,5 +159,5 @@ read('test.txt').then((list) => {
 
 read('input.txt').then((list) => {
   assert.deepEqual(solution01(list), 434147)
-  // assert.deepEqual(solution02(list), 52885384955882)
+  assert.deepEqual(solution02(list), 136146366355609)
 })

@@ -1,14 +1,14 @@
 export default class Graph {
-  constructor(graph) {
-    this.graph = graph || {}
+  constructor(tree) {
+    this.tree = tree || {}
     this.isVisited = {}
     this.pathList = []
     this.allPaths = []
   }
 
   addEdge(start, end) {
-    if (!this.graph[start]) this.graph[start] = []
-    this.graph[start].push(end)
+    if (!this.tree[start]) this.tree[start] = []
+    this.tree[start].push(end)
   }
 
   traverse(node, end) {
@@ -18,10 +18,7 @@ export default class Graph {
     // if match found no need to traverse more
     if (node === end) {
       // Add path to all paths
-      if (
-        !this.allPaths.find((path) => path.join('') === this.pathList.join(''))
-      )
-        this.allPaths.push(this.pathList.slice())
+      this.allPaths.push(this.pathList.slice())
       return
     }
 
@@ -29,8 +26,8 @@ export default class Graph {
     this.isVisited[node] = true
 
     // loop through all neighbours
-    for (let i = 0; i < this.graph[node].length; i++) {
-      const neighbor = this.graph[node][i]
+    for (let i = 0; i < this.tree[node].length; i++) {
+      const neighbor = this.tree[node][i]
 
       if (!this.isVisited[neighbor]) {
         // recursively traverse all paths

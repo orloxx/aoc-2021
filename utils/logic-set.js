@@ -8,7 +8,7 @@ import assert from 'assert'
  * @param b
  * @returns {Array}
  */
-function subtractRanges(a, b) {
+export function subtractRanges(a, b) {
   const [aStart, aEnd] = a
   const [bStart, bEnd] = b
 
@@ -25,12 +25,39 @@ function subtractRanges(a, b) {
 }
 
 assert.deepEqual(subtractRanges([1, 10], [4, 6]), [])
+assert.deepEqual(subtractRanges([1, 2], [2, 3]), [[3, 3]])
 assert.deepEqual(subtractRanges([1, 10], [5, 15]), [[11, 15]])
 assert.deepEqual(subtractRanges([4, 6], [1, 10]), [
   [1, 3],
   [7, 10],
 ])
 
-/**
- * Function that takes a list of ranges and returns
- */
+export function intersectRanges(a, b) {
+  const [aStart, aEnd] = a
+  const [bStart, bEnd] = b
+
+  if (aStart <= bStart && aEnd >= bEnd) return b
+  if (aStart <= bStart && aEnd <= bEnd) return [bStart, aEnd]
+  if (aStart >= bStart && aEnd >= bEnd) return [aStart, bEnd]
+  if (aStart >= bStart && aEnd <= bEnd) return a
+
+  return []
+}
+
+assert.deepEqual(intersectRanges([1, 10], [4, 6]), [4, 6])
+assert.deepEqual(intersectRanges([1, 2], [2, 3]), [2, 2])
+assert.deepEqual(intersectRanges([1, 10], [5, 15]), [5, 10])
+assert.deepEqual(intersectRanges([4, 6], [1, 10]), [4, 6])
+
+export function calculateCombinations(ranges) {
+  return ranges.map(([min, max]) => max - min + 1).multiplyAll()
+}
+
+assert.deepEqual(
+  calculateCombinations([
+    [1, 65],
+    [1, 32],
+    [1, 4],
+  ]),
+  8320
+)
