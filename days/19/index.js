@@ -133,7 +133,8 @@ function solution02(list) {
             (op) => op.then === then && !op.visited
           )
           const flowOperation = flow[node].slice(0, operationIdx + 1)
-          const ranges = flowOperation.reduce((prev, op, j) => {
+
+          return flowOperation.reduce((prev, op, j) => {
             if (operationIdx === j) {
               if (then === END) flow[node][j].visited = true
               return getRangesFromOperation(prev, op) || prev
@@ -141,8 +142,6 @@ function solution02(list) {
 
             return getOppositeRangesFromOperation(prev, op) || prev
           }, acc)
-
-          return ranges
         },
         { x: [1, 4000], m: [1, 4000], a: [1, 4000], s: [1, 4000] }
       )

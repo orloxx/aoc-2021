@@ -6,8 +6,8 @@ const POLYFILLS = {
       return this.sort((a, b) => (a - b) * dir)
     }
     const data = [3, 5, -1, 1]
-    const result = [-1, 1, 3, 5]
-    assert.deepEqual(data.sortIntegers(), result)
+    assert.deepEqual(data.sortIntegers(), [-1, 1, 3, 5])
+    assert.deepEqual(data.sortIntegers(-1), [5, 3, 1, -1])
   },
 
   sumAll() {
