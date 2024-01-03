@@ -123,16 +123,46 @@ function solution01(list) {
   }, 0)
 }
 
+function countBlocksAbove({ map, above, set = new Set() }) {
+  if (!above.length) return set
+
+  above.forEach((aboveBlock) => {
+    const { above: aboveAbove } = map[aboveBlock]
+
+    set.add(aboveBlock)
+    countBlocksAbove({ map, above: aboveAbove, set })
+  })
+
+  return set
+}
+
 function solution02(list) {
-  return 7
+  const blocks = parseInput(list).sort(sortBlocks)
+  const xyzMap = getXYZMap(blocks)
+
+  return Object.values(xyzMap).reduce((acc, { above }) => {
+    if (!above.length) return acc
+
+    const willFall = above.some((aboveBlock) => {
+      return xyzMap[aboveBlock].below.length < 2
+    })
+
+    if (willFall) {
+      const blocksAbove = countBlocksAbove({ map: xyzMap, above })
+
+      return acc + blocksAbove.size
+    }
+
+    return acc
+  }, 0)
 }
 
 read('test.txt').then((list) => {
-  assert.deepEqual(solution01(list), 5)
-  // assert.deepEqual(solution02(list), 7)
+  // assert.deepEqual(solution01(list), 5)
+  assert.deepEqual(solution02(list), 7)
 })
 
 read('input.txt').then((list) => {
-  assert.deepEqual(solution01(list), 515)
-  // assert.deepEqual(solution02(list), 136146366355609)
+  // assert.deepEqual(solution01(list), 515)
+  assert.deepEqual(solution02(list), 114230)
 })
