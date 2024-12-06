@@ -1,45 +1,27 @@
 import assert from 'assert'
 import read from '../../utils/read.js'
-import Tetris from './tetris.js'
 
-function playTetris(list, maxRocks) {
-  const tetris = new Tetris(list, maxRocks)
-
-  while (!tetris.isDone) {
-    const current = tetris.nextShape
-
-    while (current.falling) {
-      const direction = tetris.nextWindDirection
-
-      if (tetris.canMoveSide(current, direction)) {
-        current.moveSides(direction)
-      }
-
-      if (tetris.canMoveDown(current)) {
-        current.moveDown()
-      } else {
-        tetris.put(current)
-      }
-    }
-  }
-
-  return tetris.height
+const DIR = {
+  N: [-1, 0],
+  W: [0, -1],
+  S: [1, 0],
+  E: [0, 1],
 }
 
 function solution01(list) {
-  return playTetris(list, 2022)
+  const matrix = list.map((line) => line.split('').toNumber())
+
+  return 0
 }
 
-function solution02(list) {
-  return playTetris(list, 1000000000000)
-}
+function solution02(list) {}
 
 read('test.txt').then((list) => {
-  assert.deepEqual(solution01(list), 3068)
-  assert.deepEqual(solution02(list), 1514285714288)
+  assert.deepEqual(solution01(list), 102)
+  // assert.deepEqual(solution02(list), 51)
 })
 
 read('input.txt').then((list) => {
-  assert.deepEqual(solution01(list), 3211)
-  assert.deepEqual(solution02(list), 1589142857183)
+  // assert.deepEqual(solution01(list), 7870)
+  // assert.deepEqual(solution02(list), 8143)
 })

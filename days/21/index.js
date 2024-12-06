@@ -1,101 +1,78 @@
 import assert from 'assert'
 import read from '../../utils/read.js'
 
-const OPERATIONS = {
-  '+': (a, b) => a + b,
-  '-': (a, b) => a - b,
-  '*': (a, b) => a * b,
-  '/': (a, b) => a / b,
-}
-
-const INV = {
-  '+': OPERATIONS['-'],
-  '-': OPERATIONS['+'],
-  '*': OPERATIONS['/'],
-  '/': OPERATIONS['*'],
-}
-
-const NON_COMM = ['-', '/']
-
-function buildMonkeyTree(list) {
-  const monkeys = list.reduce((acc, monkey) => {
-    const [name, opStr] = monkey.split(': ')
-    const [other00, op, other01] = opStr.match(/[^\s"']+|"([^"]*)"|'([^']*)'/g)
-
-    return {
-      ...acc,
-      [name]: { other00, op, other01, yell: () => parseInt(other00, 10) },
-    }
-  }, {})
-
-  Object.keys(monkeys).forEach((name) => {
-    const { other00, op, other01 } = monkeys[name]
-
-    if (op) {
-      monkeys[name].yell = () => {
-        return OPERATIONS[op](monkeys[other00].yell(), monkeys[other01].yell())
+function findStart(list) {
+  return list.reduce(
+    (acc, line, y) => {
+      const x = line.indexOf('S')
+      if (x !== -1) {
+        return [y, x]
       }
-    }
+      return acc
+    },
+    [0, 0]
+  )
+}
+
+function buildTree(list) {
+  return list.reduce((tree, line, y) => {
+    return line.split('').reduce((acc, char, x) => {
+      return {
+        ...acc,
+        [[y, x]]: [
+          [y - 1, x],
+          [y, x - 1],
+          [y + 1, x],
+          [y, x + 1],
+        ]
+          .filter(([i, j]) => {
+            return list[i] && list[i][j] && list[i][j] !== '#'
+          })
+          .map((coord) => coord.toString()),
+      }
+    }, tree)
+  }, {})
+}
+
+// Given an n-matrix and a radius, return the same matrix with a diamond shape of 'o' characters alternating with empty spaces like a checkerboard.
+// The diamond should be centered in the matrix.
+function getDiamond({ list, radius }) {
+  const offset = Math.round((radius * 2 + 1 - list.length) / 2)
+  const radiusParity = radius % 2
+
+  return list.map((row, y) => {
+    return row.split('').map((char, x) => {
+      const centerDistance =
+        Math.abs(x - radius + offset) + Math.abs(y - radius + offset)
+      const distanceParity = centerDistance % 2
+
+      if (char === '#') return char
+
+      if (centerDistance <= radius && radiusParity === distanceParity)
+        return [y, x]
+
+      return '.'
+    })
   })
-
-  return monkeys
 }
 
-function solution01(list) {
-  const monkeys = buildMonkeyTree(list)
+function solution01(list, radius) {
+  const diamond = getDiamond({ list, radius })
+  const spots = diamond
+    .flat2DMatrix()
+    .filter((spot) => typeof spot === 'object')
 
-  return monkeys.root.yell()
+  return 0
 }
 
-function getChain(monkeys, start = 'humn', path = []) {
-  if (start === 'root') return path.reverse()
-
-  const parent = Object.keys(monkeys).find((name) => {
-    const { other00, other01 } = monkeys[name]
-    return other00 === start || other01 === start
-  })
-  const { other00, op, other01 } = monkeys[parent]
-  const next =
-    start === other00 ? { next: other01, p: 1 } : { next: other00, p: 0 }
-
-  return getChain(monkeys, parent, [
-    ...path,
-    { ...next, parent, op, other00, other01 },
-  ])
-}
-
-function solution02(list) {
-  const monkeys = buildMonkeyTree(list)
-  const chain = getChain(monkeys)
-  const humanValue = chain.reduce((acc, curr) => {
-    if (curr.parent === 'root') return monkeys[curr.next].yell()
-
-    const op = OPERATIONS[curr.op]
-    const inv = INV[curr.op]
-
-    if (curr.p === 0 && NON_COMM.includes(curr.op)) {
-      return op(monkeys[curr.next].yell(), acc)
-    }
-
-    return inv(acc, monkeys[curr.next].yell())
-  }, 0)
-
-  monkeys.humn.yell = () => humanValue
-
-  monkeys.root.yell = () => {
-    const { other00, other01 } = monkeys.root
-    return monkeys[other00].yell() === monkeys[other01].yell()
-  }
-
-  return monkeys.humn.yell()
-}
+function solution02(list) {}
 
 read('test.txt').then((list) => {
-  assert.deepEqual(solution01(list), 152)
-  assert.deepEqual(solution02(list), 301)
+  // assert.deepEqual(solution01(list, 6), 16)
+  // assert.deepEqual(solution02(list), 167409079868000)
 })
 
 read('input.txt').then((list) => {
-  assert.deepEqual(solution01(list), 31017034894002)
-  assert.deepEqual(solution02(list), 3555057453229)
+  assert.deepEqual(solution01(list, 64), 0)
+  // assert.deepEqual(solution02(list), 136146366355609)
 })

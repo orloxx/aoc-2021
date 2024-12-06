@@ -1,57 +1,106 @@
 import assert from 'assert'
 import read from '../../utils/read.js'
 
-const testStacks = () => ({
-  1: ['Z', 'N'],
-  2: ['M', 'C', 'D'],
-  3: ['P'],
-})
+function parseInput(list) {
+  const [[seeds], ...sourceToDestMap] = list.reduce((acc, line) => {
+    if (!acc.length) return [[line]]
 
-const inputStacks = () => ({
-  1: ['D', 'B', 'J', 'V'],
-  2: ['P', 'V', 'B', 'W', 'R', 'D', 'F'],
-  3: ['R', 'G', 'F', 'L', 'D', 'C', 'W', 'Q'],
-  4: ['W', 'J', 'P', 'M', 'L', 'N', 'D', 'B'],
-  5: ['H', 'N', 'B', 'P', 'C', 'S', 'Q'],
-  6: ['R', 'D', 'B', 'S', 'N', 'G'],
-  7: ['Z', 'B', 'P', 'M', 'Q', 'F', 'S', 'H'],
-  8: ['W', 'L', 'F'],
-  9: ['S', 'V', 'F', 'M', 'R'],
-})
+    if (!line) return [...acc, []]
 
-function getString(stack) {
-  return Object.keys(stack).reduce((acc, curr) => {
-    return `${acc}${stack[curr].pop()}`
-  }, '')
+    const last = acc[acc.length - 1]
+    return [...acc.slice(0, -1), [...last, line]]
+  }, [])
+
+  /**
+   * sourceToDestMap is an array of 7 values:
+   * [
+   *   seedSoil,
+   *   soilFertilizer,
+   *   fertilizerWater,
+   *   waterLight,
+   *   lightTemperature,
+   *   temperatureHumidity,
+   *   humidityLocation
+   * ]
+   */
+  return {
+    seeds: seeds.replace('seeds: ', '').split(' ').toNumber(),
+    // Each parsed map contains these three values: [destination, source, length]
+    sourceToDestMap: sourceToDestMap.map((map) => {
+      const numbers = map.slice(1).map((line) => line.split(' ').toNumber())
+
+      // return the numbers sorted by source
+      return numbers.sort((a, b) => a[1] - b[1])
+    }),
+  }
 }
 
-function solution01(list, stack) {
-  list.forEach((line) => {
-    const [move, from, to] = line.match(/[0-9]+/g).toNumber()
+function getSmallSeedLocations({ seed, sourceToDestMap }) {
+  const seedPath = [seed]
 
-    for (let i = 0; i < move; i += 1) {
-      stack[to].push(stack[from].pop())
+  sourceToDestMap.forEach((map) => {
+    const lastPath = seedPath[seedPath.length - 1]
+    const [, lastSource, lastLength] = map[map.length - 1]
+    const [minSource, maxSource] = [map[0][1], lastSource + lastLength - 1]
+
+    if (lastPath < minSource || lastPath > maxSource) {
+      seedPath.push(lastPath)
+      return
     }
+
+    const sourceMap = map.find(([, s, l]) => lastPath >= s && lastPath < s + l)
+
+    if (!sourceMap) {
+      seedPath.push(lastPath)
+      return
+    }
+
+    const [dest, src] = sourceMap
+    const deltaSrc = lastPath - src
+
+    seedPath.push(dest + deltaSrc)
   })
 
-  return getString(stack)
+  return seedPath[seedPath.length - 1]
 }
 
-function solution02(list, stack) {
-  list.forEach((line) => {
-    const [move, from, to] = line.match(/[0-9]+/g).toNumber()
-    stack[to].push(...stack[from].splice(stack[from].length - move))
-  })
+function findSeedLocations({ seeds, sourceToDestMap }) {
+  return seeds
+    .map((seed) => {
+      return getSmallSeedLocations({ seed, sourceToDestMap })
+    })
+    .sortIntegers()[0]
+}
 
-  return getString(stack)
+function solution01(list) {
+  return findSeedLocations(parseInput(list))
+}
+
+function solution02(list) {
+  const { seeds, sourceToDestMap } = parseInput(list)
+  let smallest = Infinity
+
+  for (let i = 0; i < seeds.length; i++) {
+    if (i % 2 === 0) {
+      const [seed, times] = [seeds[i], seeds[i + 1]]
+
+      for (let j = seed; j < seed + times; j++) {
+        const small = getSmallSeedLocations({ seed: j, sourceToDestMap })
+
+        smallest = Math.min(small, smallest)
+      }
+    }
+  }
+
+  return smallest
 }
 
 read('test.txt').then((list) => {
-  assert.deepEqual(solution01(list, testStacks()), 'CMZ')
-  assert.deepEqual(solution02(list, testStacks()), 'MCD')
+  assert.deepEqual(solution01(list), 35)
+  assert.deepEqual(solution02(list), 46)
 })
 
 read('input.txt').then((list) => {
-  assert.deepEqual(solution01(list, inputStacks()), 'BSDMQFLSP')
-  assert.deepEqual(solution02(list, inputStacks()), 'PGSQBFLDP')
+  assert.deepEqual(solution01(list), 313045984)
+  assert.deepEqual(solution02(list), 20283860)
 })

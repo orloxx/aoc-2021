@@ -1,109 +1,127 @@
 import assert from 'assert'
 import read from '../../utils/read.js'
 
-const SPACE = ' '
-const BLOCK = '█'
-const O = 'o'
-const [Ix, Iy] = [500, 0]
-
-function parseCave(list) {
-  const size = 1100
-  const cave = [].n2DMatrix(size, SPACE)
-  let floor = 0
-
-  list.forEach((line) => {
-    const stoneTrace = line
-      .split(' -> ')
-      .map((coordinates) => coordinates.split(',').toNumber())
-
-    stoneTrace.forEach(([x, y], i) => {
-      floor = Math.max(floor, y)
-      if (i === stoneTrace.length - 1) return
-
-      const [x1, y1] = stoneTrace[i + 1]
-      const delta = x === x1 ? y1 - y : x1 - x
-      const dir = delta / Math.abs(delta)
-
-      for (let j = 0; j <= Math.abs(delta); j++) {
-        // draw vertical
-        if (x === x1) cave[y + j * dir][x] = BLOCK
-        // draw horizontal
-        else if (y === y1) cave[y][x + j * dir] = BLOCK
-      }
-    }, cave)
-  })
-
-  cave.splice(floor + 3)
-
-  return cave
+const DIR = {
+  N: [-1, 0],
+  W: [0, -1],
+  S: [1, 0],
+  E: [0, 1],
 }
 
-function fallingSand(cave) {
-  const newCave = cave
-  let [ix, iy] = [Ix, Iy]
-  const stopFalling = () =>
-    cave[iy + 1][ix] !== SPACE &&
-    cave[iy + 1][ix - 1] !== SPACE &&
-    cave[iy + 1][ix + 1] !== SPACE
+function getNewMatrixPerspective({ matrix, dir }) {
+  if (dir === DIR.W) return matrix.rotateClockwise()
+  if (dir === DIR.S) return matrix.rotateClockwise().rotateClockwise()
+  if (dir === DIR.E) return matrix.rotateCounterClockwise()
+  return matrix.map((line) => [...line])
+}
 
-  try {
-    while (!stopFalling()) {
-      if (cave[iy + 1][ix] === SPACE) {
-        // do nothing
-      } else if (cave[iy + 1][ix - 1] === SPACE) {
-        ix--
-      } else if (cave[iy + 1][ix + 1] === SPACE) {
-        ix++
+function revertMatrixPerspective({ matrix, dir }) {
+  if (dir === DIR.W) return matrix.rotateCounterClockwise()
+  if (dir === DIR.S) return matrix.rotateClockwise().rotateClockwise()
+  if (dir === DIR.E) return matrix.rotateClockwise()
+  return matrix
+}
+
+function tilt({ matrix, dir }) {
+  const newMatrix = getNewMatrixPerspective({ matrix, dir })
+
+  for (let i = 0; i < newMatrix.length; i++) {
+    for (let j = 0; j < newMatrix[0].length; j++) {
+      const spot = newMatrix[i][j]
+
+      // Move rock
+      if (spot === 'O') {
+        let y = i
+        while (y - 1 >= 0 && newMatrix[y - 1][j] === '.') {
+          y--
+        }
+        newMatrix[i][j] = '.'
+        newMatrix[y][j] = 'O'
       }
-      iy++
     }
-  } catch (error) {
-    return false
   }
 
-  if (iy === Iy && ix === Ix) return false
-
-  newCave[iy][ix] = O
-  return true
+  return revertMatrixPerspective({ matrix: newMatrix, dir })
 }
 
-function addFloor(cave) {
-  const newCave = cave
-  const lastIdx = newCave.length - 1
+function totalLoad({ tilted }) {
+  return tilted.reduce((acc, row, i) => {
+    const rocks = row.filter((spot) => spot === 'O').length
 
-  newCave[lastIdx] = newCave[lastIdx].map(() => BLOCK)
-}
-
-function startFalling({ list, hasFloor = false }) {
-  const cave = parseCave(list)
-  let sand = 0
-
-  if (hasFloor) {
-    addFloor(cave)
-    sand = 1
-  }
-
-  while (fallingSand(cave)) {
-    sand++
-  }
-
-  return sand
+    return acc + rocks * (tilted.length - i)
+  }, 0)
 }
 
 function solution01(list) {
-  return startFalling({ list })
+  const matrix = list.map((line) => line.split(''))
+  const tilted = tilt({ matrix, dir: DIR.N })
+
+  return totalLoad({ tilted })
+}
+
+function getCyclePattern(stackCycles) {
+  if (stackCycles.length < 2) return false
+
+  const last = stackCycles[stackCycles.length - 1]
+  const sameIdx = stackCycles.findIndex(
+    (cycle, i) => i !== stackCycles.length - 1 && cycle.are2DSame(last)
+  )
+
+  if (sameIdx === -1) return false
+
+  const patternSize = stackCycles.length - 1 - sameIdx
+
+  if (sameIdx <= patternSize - 1) return false
+
+  const pattern1 = stackCycles.slice(-patternSize)
+  const pattern2 = stackCycles.slice(
+    stackCycles.length - 2 * patternSize,
+    -patternSize
+  )
+
+  const equal = pattern1.every((cycle, i) => cycle.are2DSame(pattern2[i]))
+
+  return equal ? pattern1 : false
+}
+
+function getLastCycle(list) {
+  const MAX = 1000000000
+  let tilted = list.map((line) => line.split(''))
+  const stackCycles = []
+
+  for (let i = 0; i < MAX; i++) {
+    tilted = tilt({ matrix: tilted, dir: DIR.N })
+    tilted = tilt({ matrix: tilted, dir: DIR.W })
+    tilted = tilt({ matrix: tilted, dir: DIR.S })
+    tilted = tilt({ matrix: tilted, dir: DIR.E })
+
+    stackCycles.push(tilted)
+
+    const pattern = getCyclePattern(stackCycles)
+
+    if (pattern) {
+      const rest = stackCycles.length - 2 * pattern.length
+      const idx = ((MAX - rest) % pattern.length) - 1
+
+      return pattern[idx]
+    }
+  }
+
+  return false
 }
 
 function solution02(list) {
-  return startFalling({ list, hasFloor: true })
+  const lastMatrix = getLastCycle(list)
+
+  return totalLoad({ tilted: lastMatrix })
 }
 
 read('test.txt').then((list) => {
-  assert.deepEqual(solution01(list), 24)
-  assert.deepEqual(solution02(list), 93)
+  assert.deepEqual(solution01(list), 136)
+  assert.deepEqual(solution02(list), 64)
 })
 
 read('input.txt').then((list) => {
-  assert.deepEqual(solution01(list), 873)
-  assert.deepEqual(solution02(list), 24813)
+  assert.deepEqual(solution01(list), 105461)
+  assert.deepEqual(solution02(list), 102829)
 })

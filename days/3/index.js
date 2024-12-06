@@ -1,53 +1,102 @@
 import assert from 'assert'
 import read from '../../utils/read.js'
 
-const PRIO = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+function hasSymbolAdjacent({ list, part, y }) {
+  for (let j = y - 1; j <= y + 1; j++) {
+    for (let i = part.x - 1; i <= part.x + part.n.length; i++) {
+      const current = list[j] && list[j][i]
 
-function findCommon(a, b) {
-  return a.split('').find((l) => b.split('').indexOf(l) >= 0)
+      if (current?.match(/[^.0-9]/g)) {
+        return true
+      }
+    }
+  }
+
+  return false
 }
 
-function findCommon2([a, b, c]) {
-  return a
-    .split('')
-    .find((l) => b.split('').indexOf(l) >= 0 && c.split('').indexOf(l) >= 0)
+function isFakeIdx({ n, line, idx }) {
+  return line[idx - 1]?.match(/\d+/g) || line[idx + n.length]?.match(/\d+/g)
+}
+
+function getParts({ line, numbers }) {
+  return [...new Set(numbers)]
+    .map((n) => ({
+      x: line.getAllIndex(n).filter((idx) => !isFakeIdx({ n, line, idx })),
+      n,
+    }))
+    .reduce(
+      (allParts, part) => [
+        ...allParts,
+        ...part.x.map((x) => ({ n: part.n, x })),
+      ],
+      []
+    )
 }
 
 function solution01(list) {
-  return list.reduce((acc, curr) => {
-    const mid = curr.length / 2
-    const common = findCommon(
-      curr.substring(0, mid),
-      curr.substring(mid, curr.length)
-    )
-    return acc + PRIO.indexOf(common) + 1
+  return list.reduce((acc, line, y) => {
+    const numbers = line.match(/\d+/g)
+
+    if (!numbers) return acc
+
+    const parts = getParts({ line, numbers })
+      .filter((part) => hasSymbolAdjacent({ list, part, y }))
+      .map(({ n }) => Number(n))
+
+    return acc + parts.sumAll()
   }, 0)
 }
 
-function solution02(list) {
-  return list
-    .reduce((acc, curr) => {
-      if (!acc.length) return [[curr]]
-      const last = acc[acc.length - 1]
+function findGear({ list, part, y }) {
+  for (let j = y - 1; j <= y + 1; j++) {
+    for (let i = part.x - 1; i <= part.x + part.n.length; i++) {
+      const current = list[j] && list[j][i]
 
-      if (last.length < 3) {
-        last.push(curr)
-        return acc
+      if (current === '*') {
+        return `${j},${i}`
       }
-      return [...acc, [curr]]
-    }, [])
-    .reduce((acc, curr) => {
-      const common = findCommon2(curr)
-      return acc + PRIO.indexOf(common) + 1
-    }, 0)
+    }
+  }
+
+  return ''
+}
+
+function solution02(list) {
+  const gearMap = list
+    .map((line, y) => {
+      const numbers = line.match(/\d+/g)
+
+      if (!numbers) return null
+
+      const parts = getParts({ line, numbers })
+        .map((part) => ({
+          ...part,
+          gear: findGear({ list, part, y }),
+        }))
+        .filter(({ gear }) => gear.length)
+
+      return parts.length ? parts : null
+    })
+    .filter((o) => o)
+    .flat2DMatrix()
+    .reduce((acc, { n, gear }) => {
+      if (!acc[gear]) return { ...acc, [gear]: [Number(n)] }
+      return { ...acc, [gear]: [...acc[gear], Number(n)] }
+    }, {})
+
+  return Object.values(gearMap)
+    .filter((engines) => engines.length > 1)
+    .map(([e1, e2]) => e1 * e2)
+    .sumAll()
 }
 
 read('test.txt').then((list) => {
-  assert.deepEqual(solution01(list), 157)
-  assert.deepEqual(solution02(list), 70)
+  assert.deepEqual(solution01(list), 4361)
+  assert.deepEqual(solution02(list), 467835)
 })
 
 read('input.txt').then((list) => {
-  assert.deepEqual(solution01(list), 7568)
-  assert.deepEqual(solution02(list), 2780)
+  assert.deepEqual(solution01(list), 557705)
+  assert.deepEqual(solution02(list), 84266818)
 })

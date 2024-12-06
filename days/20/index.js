@@ -1,48 +1,66 @@
+// eslint-disable-next-line max-classes-per-file
 import assert from 'assert'
 import read from '../../utils/read.js'
 
-function moveAround(list, key, cycles) {
-  // wrap number in array to treat each one as unique
-  const iterable = list.map((n) => n * key).map((d) => [d])
-  const puzzle = [...iterable]
+class TestReceiver {
+  constructor(label) {
+    this.label = label
+  }
+}
 
-  for (let c = 0; c < cycles; c++) {
-    iterable.forEach((item) => {
-      // unwrap number from array
-      const [n] = item
-      const idx = puzzle.indexOf(item)
-
-      puzzle.splice(idx, 1)
-      puzzle.splice((idx + n) % puzzle.length, 0, item)
-    })
+class InputType {
+  constructor(receivers) {
+    this.receivers = receivers.split(',').map((receiver) => receiver.trim())
   }
 
-  return puzzle.flat()
+  updateReceivers(circuit) {
+    this.receivers = this.receivers.map(
+      (receiver) => circuit[receiver] || new TestReceiver(receiver)
+    )
+  }
 }
 
-function sumGrove(list, key = 1, cycles = 1) {
-  const puzzle = moveAround(list.toNumber(), key, cycles)
-  const zeroIdx = puzzle.findIndex((n) => n === 0)
+class Button extends InputType {}
 
-  return [1000, 2000, 3000]
-    .map((grove) => puzzle[(grove + zeroIdx) % puzzle.length])
-    .sumAll()
-}
+class Broadcaster extends InputType {}
+
+class FlipFlop extends InputType {}
+
+class Conjunction extends InputType {}
 
 function solution01(list) {
-  return sumGrove(list)
+  const circuit = list.reduce(
+    (acc, line) => {
+      const [input, receivers] = line.split(' -> ')
+
+      if (input === 'broadcaster')
+        return { ...acc, [input]: new Broadcaster(receivers) }
+      if (input.includes('%'))
+        return { ...acc, [input.replace('%', '')]: new FlipFlop(receivers) }
+      if (input.includes('&'))
+        return {
+          ...acc,
+          [input.replace('&', '')]: new Conjunction(receivers),
+        }
+
+      return acc
+    },
+    { button: new Button('broadcaster') }
+  )
+
+  Object.values(circuit).forEach((value) => value.updateReceivers(circuit))
+
+  return 0
 }
 
-function solution02(list) {
-  return sumGrove(list, 811589153, 10)
-}
+function solution02(list) {}
 
 read('test.txt').then((list) => {
-  assert.deepEqual(solution01(list), 3)
-  assert.deepEqual(solution02(list), 1623178306)
+  assert.deepEqual(solution01(list), 32000000)
+  // assert.deepEqual(solution02(list), 167409079868000)
 })
 
 read('input.txt').then((list) => {
-  assert.deepEqual(solution01(list), 8372)
-  assert.deepEqual(solution02(list), 7865110481723)
+  // assert.deepEqual(solution01(list), 434147)
+  // assert.deepEqual(solution02(list), 136146366355609)
 })

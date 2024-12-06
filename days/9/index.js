@@ -1,74 +1,62 @@
 import assert from 'assert'
 import read from '../../utils/read.js'
 
-function areAdjacent([x1, y1], [x2, y2]) {
-  const dx = Math.abs(x1 - x2)
-  const dy = Math.abs(y1 - y2)
-  return dx < 2 && dy < 2
+function* deltasGenerator(numbers) {
+  let delta = [...numbers]
+
+  while (delta.some((n) => n !== 0)) {
+    delta = delta.reduce((acc, n, i) => {
+      if (i === delta.length - 1) return acc
+
+      return [...acc, delta[i + 1] - n]
+    }, [])
+
+    yield delta
+  }
+
+  yield false
 }
 
-function move({ rope, num, dir, idx }) {
-  return [].nMatrix(num).map(() => {
-    const head = rope[0]
-    const tail = rope[rope.length - 1]
-    head[idx] += dir
+function getAllDeltas(numbers) {
+  const gen = deltasGenerator(numbers)
+  const result = [numbers]
+  let delta = gen.next().value
 
-    for (let i = 0; i < rope.length - 1; i++) {
-      const body = rope[i + 1]
-      if (!areAdjacent(rope[i], body)) {
-        const x = rope[i][0] - body[0]
-        const y = rope[i][1] - body[1]
-        body[0] += x ? x / Math.abs(x) : 0
-        body[1] += y ? y / Math.abs(y) : 0
-      }
-    }
+  while (delta) {
+    result.push(delta)
+    delta = gen.next().value
+  }
 
-    return [tail[0], tail[1]]
-  })
+  return result
 }
 
-const POSITIONS = {
-  U: { dir: 1, idx: 0 },
-  R: { dir: 1, idx: 1 },
-  D: { dir: -1, idx: 0 },
-  L: { dir: -1, idx: 1 },
+function parseEnd(prev, curr, i) {
+  if (i === 0) return prev
+
+  return prev + curr[curr.length - 1]
 }
 
-function moveRope(list, ropeSize) {
-  const tailSteps = new Set(['0,0'])
-  const rope = [].nMatrix(ropeSize).map(() => [0, 0])
+function parseBeginning(prev, curr, i) {
+  if (i === 0) return prev
 
-  list.forEach((line) => {
-    const [dir, n] = line.split(' ')
-    const tailPositions = move({
-      rope,
-      num: parseInt(n, 10),
-      ...POSITIONS[dir],
-    })
-
-    tailPositions.forEach((p) => {
-      const [x, y] = p
-      tailSteps.add(`${x},${y}`)
-    })
-  })
-
-  return tailSteps.size
+  return -prev + curr[0]
 }
 
-function solution01(list) {
-  return moveRope(list, 2)
-}
+function solution(list, callback) {
+  return list.reduce((acc, line) => {
+    const numbers = line.split(' ').toNumber()
+    const allDeltas = getAllDeltas(numbers).reverse().reduce(callback, 0)
 
-function solution02(list) {
-  return moveRope(list, 10)
+    return acc + allDeltas
+  }, 0)
 }
 
 read('test.txt').then((list) => {
-  assert.deepEqual(solution01(list), 88)
-  assert.deepEqual(solution02(list), 36)
+  assert.deepEqual(solution(list, parseEnd), 18 + 28 + 68)
+  assert.deepEqual(solution(list, parseBeginning), 2)
 })
 
 read('input.txt').then((list) => {
-  assert.deepEqual(solution01(list), 6037)
-  assert.deepEqual(solution02(list), 2485)
+  assert.deepEqual(solution(list, parseEnd), 1939607039)
+  assert.deepEqual(solution(list, parseBeginning), 1041)
 })

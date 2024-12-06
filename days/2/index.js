@@ -1,48 +1,75 @@
 import assert from 'assert'
 import read from '../../utils/read.js'
 
-const OPTIONS = ['rock', 'paper', 'scissors']
-const OPPONENT = ['A', 'B', 'C']
-const MINE = ['X', 'Y', 'Z']
-
-const WIN = { rock: OPTIONS[2], paper: OPTIONS[0], scissors: OPTIONS[1] }
-const LOSE = { rock: OPTIONS[1], paper: OPTIONS[2], scissors: OPTIONS[0] }
-
-function calculatePoints(opponent, mine) {
-  const points = OPTIONS.indexOf(mine) + 1
-  if (WIN[mine] === opponent) return points + 6
-  if (LOSE[mine] === opponent) return points
-  return points + 3
+const INVENTORY = {
+  red: 12,
+  green: 13,
+  blue: 14,
 }
 
-function getSolution(list, mineSelector) {
-  return list.reduce((acc, curr) => {
-    const [o, m] = curr.split(' ')
-    const opponent = OPTIONS[OPPONENT.indexOf(o)]
-    const mine = mineSelector(m, opponent)
+function parseGame(line) {
+  const [game, ballSet] = line.split(': ')
+  const gameId = Number(game.replace(/[^0-9]/g, ''))
+  const balls = ballSet.split('; ')
 
-    return acc + calculatePoints(opponent, mine)
-  }, 0)
+  return {
+    gameId,
+    balls: balls.map((ball) => {
+      return ball.split(', ').map((b) => {
+        const [count, color] = b.split(' ')
+
+        return { color, count: Number(count) }
+      })
+    }),
+  }
 }
 
-function solution01(list) {
-  return getSolution(list, (m) => OPTIONS[MINE.indexOf(m)])
-}
-
-function solution02(list) {
-  return getSolution(list, (option, choice) => {
-    if (option === 'X') return WIN[choice]
-    if (option === 'Y') return choice
-    return LOSE[choice]
+function isGameValid(game) {
+  return game.balls.every((ballSet) => {
+    return ballSet.every((ball) => {
+      return ball.count <= INVENTORY[ball.color]
+    })
   })
 }
 
+function checkFewestBalls(game) {
+  const flatBalls = game.balls.flat2DMatrix()
+
+  return flatBalls.reduce(
+    (prev, ball) => {
+      if (prev[ball.color] < ball.count) {
+        return { ...prev, [ball.color]: ball.count }
+      }
+      return prev
+    },
+    { red: 0, blue: 0, green: 0 }
+  )
+}
+
+function solution01(list) {
+  return list
+    .map((line) => parseGame(line))
+    .filter((game) => isGameValid(game))
+    .map((game) => game.gameId)
+    .sumAll()
+}
+
+function solution02(list) {
+  return list
+    .map((line) => {
+      const fewer = checkFewestBalls(parseGame(line))
+
+      return Object.values(fewer).multiplyAll()
+    })
+    .sumAll()
+}
+
 read('test.txt').then((list) => {
-  assert.deepEqual(solution01(list), 15)
-  assert.deepEqual(solution02(list), 12)
+  assert.deepEqual(solution01(list), 8)
+  assert.deepEqual(solution02(list), 2286)
 })
 
 read('input.txt').then((list) => {
-  assert.deepEqual(solution01(list), 13268)
-  assert.deepEqual(solution02(list), 15508)
+  assert.deepEqual(solution01(list), 2545)
+  assert.deepEqual(solution02(list), 0)
 })

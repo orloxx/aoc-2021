@@ -1,124 +1,123 @@
 import assert from 'assert'
 import read from '../../utils/read.js'
-import bfs from '../../utils/bfs.js'
 
-function parseInput(list) {
-  return list.reduce(
-    (acc, line) => {
-      const [valveInfo, tunnelsInfo] = line.split(';')
-      const [valve] = valveInfo.match(/[A-Z]{2}/g)
-      const [pressure] = valveInfo.match(/-?\d*\.?\d+/g).toNumber()
-      const tunnel = tunnelsInfo.match(/[A-Z]{2}/g)
+const DIR = {
+  N: [-1, 0],
+  W: [0, -1],
+  S: [1, 0],
+  E: [0, 1],
+}
 
-      return {
-        tree: { ...acc.tree, [valve]: tunnel },
-        cost: { ...acc.cost, [valve]: pressure },
+const DIR_CHANGE = {
+  // mirror /
+  [`/${DIR.N.join()}`]: DIR.E,
+  [`/${DIR.W.join()}`]: DIR.S,
+  [`/${DIR.S.join()}`]: DIR.W,
+  [`/${DIR.E.join()}`]: DIR.N,
+  // mirror \
+  [`\\${DIR.N.join()}`]: DIR.W,
+  [`\\${DIR.W.join()}`]: DIR.N,
+  [`\\${DIR.S.join()}`]: DIR.E,
+  [`\\${DIR.E.join()}`]: DIR.S,
+}
+
+const SPLIT = {
+  // splitter -
+  [`-${DIR.N.join()}`]: [DIR.W, DIR.E],
+  [`-${DIR.W.join()}`]: [],
+  [`-${DIR.S.join()}`]: [DIR.W, DIR.E],
+  [`-${DIR.E.join()}`]: [],
+  // splitter |
+  [`|${DIR.N.join()}`]: [],
+  [`|${DIR.W.join()}`]: [DIR.N, DIR.S],
+  [`|${DIR.S.join()}`]: [],
+  [`|${DIR.E.join()}`]: [DIR.N, DIR.S],
+}
+
+function beamMeUp({ mirrorMatrix, start = [0, 0], dir = DIR.E }) {
+  const matrix = mirrorMatrix.map((row) => row.map((c) => ({ ...c })))
+  const heads = [{ pos: start, dir }]
+
+  while (heads.length) {
+    heads.forEach((_, i) => {
+      const [y, x] = heads[i].pos
+
+      // stop when out of bounds or when beam is in a cycle
+      if (
+        y < 0 ||
+        x < 0 ||
+        y >= matrix.length ||
+        x >= matrix[0].length ||
+        matrix[y][x].dirs.some((d) => d.join() === heads[i].dir.join())
+      ) {
+        heads.splice(i, 1)
+        return
       }
-    },
-    { tree: {}, cost: {} }
+
+      const { cell } = matrix[y][x]
+      // energize cell
+      matrix[y][x].energy++
+      // add beam direction to cell
+      matrix[y][x].dirs.push(heads[i].dir)
+
+      // Change direction
+      if (['/', '\\'].includes(cell)) {
+        heads[i].dir = DIR_CHANGE[`${cell}${heads[i].dir.join()}`]
+      } else if (['-', '|'].includes(cell)) {
+        const splits = SPLIT[`${cell}${heads[i].dir.join()}`]
+
+        if (splits.length) {
+          const [dy, dx] = splits[1]
+
+          heads[i].dir = splits[0]
+          heads.push({ pos: [y + dy, x + dx], dir: splits[1] })
+        }
+      }
+
+      const [dy, dx] = heads[i].dir
+
+      // move head
+      heads[i].pos = [y + dy, x + dx]
+    })
+  }
+
+  return matrix
+}
+
+function getMirrorMatrix(list) {
+  return list.map((row) =>
+    row.split('').map((c) => ({ cell: c, energy: 0, dirs: [] }))
   )
 }
 
-function openingValves({ distances, valve, minutes, active, opened = {} }) {
-  const allValves = [opened]
+function solution01(list, start = [0, 0], dir = DIR.E) {
+  const mirrorMatrix = getMirrorMatrix(list)
+  const energyMatrix = beamMeUp({ mirrorMatrix, start, dir }).map((line) =>
+    line.map((c) => (c.energy > 0 ? '#' : '.'))
+  )
 
-  active.forEach((other, index) => {
-    const newMinutes = minutes - distances[valve][other] - 1
-    if (newMinutes < 1) return
-
-    const newOpened = JSON.parse(JSON.stringify(opened))
-    newOpened[other] = newMinutes
-
-    const newActive = [...active]
-    newActive.splice(index, 1)
-
-    allValves.push(
-      ...openingValves({
-        distances,
-        valve: other,
-        minutes: newMinutes,
-        active: newActive,
-        opened: newOpened,
-      })
-    )
-  })
-
-  return allValves
-}
-
-function getDistances(tree) {
-  return Object.keys(tree).reduce((accStart, start) => {
-    return Object.keys(tree).reduce((accEnd, end) => {
-      return {
-        ...accEnd,
-        [start]: { ...accEnd[start], [end]: bfs(tree, start, end).length - 1 },
-      }
-    }, accStart)
-  }, {})
-}
-
-function solution01(list) {
-  const { tree, cost } = parseInput(list)
-  const distances = getDistances(tree)
-  const active = Object.keys(tree).filter((valve) => cost[valve] > 0)
-
-  return openingValves({ distances, valve: 'AA', minutes: 30, active })
-    .map((path) => {
-      return Object.entries(path).reduce((acc, [node, minutes]) => {
-        return acc + cost[node] * minutes
-      }, 0)
-    })
-    .sortIntegers()
-    .pop()
-}
-
-function getMaxCost({ pathCostsMap, cost }) {
-  return pathCostsMap.reduce((acc, pathCost) => {
-    const path = Object.keys(pathCost).sort().join(',')
-    const score = Object.entries(pathCost).reduce(
-      (acc1, [node, minutes]) => acc1 + cost[node] * minutes,
-      0
-    )
-    const currentScore = acc[path] || -Infinity
-    return { ...acc, [path]: Math.max(currentScore, score) }
-  }, {})
+  return energyMatrix.flat2DMatrix().filter((c) => c === '#').length
 }
 
 function solution02(list) {
-  const { tree, cost } = parseInput(list)
-  const distances = getDistances(tree)
-  const active = Object.keys(tree).filter((valve) => cost[valve] > 0)
+  const energyList = []
 
-  const pathCostsMap = openingValves({
-    distances,
-    valve: 'AA',
-    minutes: 26,
-    active,
-  })
+  for (let i = 0; i < list.length; i++) {
+    energyList.push(solution01(list, [i, 0], DIR.E))
+    energyList.push(solution01(list, [0, i], DIR.S))
+    energyList.push(solution01(list, [i, list.length - 1], DIR.W))
+    energyList.push(solution01(list, [list.length - 1, i], DIR.N))
+  }
 
-  const maxScores = getMaxCost({ pathCostsMap, cost })
-  const scoreKeys = Object.keys(maxScores)
-
-  return scoreKeys.reduce((acc, elf) => {
-    return scoreKeys.reduce((acc1, elephant) => {
-      const elfScores = elf.split(',')
-      const elephantScores = elephant.split(',')
-      const unique = new Set([...elfScores, ...elephantScores])
-
-      if (unique.size === elfScores.length + elephantScores.length) {
-        return Math.max(maxScores[elf] + maxScores[elephant], acc1)
-      }
-      return acc1
-    }, acc)
-  }, -Infinity)
+  return Math.max(...energyList)
 }
 
 read('test.txt').then((list) => {
-  assert.deepEqual(solution01(list), 1651)
-  assert.deepEqual(solution02(list), 1707)
+  assert.deepEqual(solution01(list), 46)
+  assert.deepEqual(solution02(list), 51)
 })
 
 read('input.txt').then((list) => {
-  assert.deepEqual(solution01(list), 1792)
-  assert.deepEqual(solution02(list), 2587)
+  assert.deepEqual(solution01(list), 7870)
+  assert.deepEqual(solution02(list), 8143)
 })

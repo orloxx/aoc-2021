@@ -6,8 +6,8 @@ const POLYFILLS = {
       return this.sort((a, b) => (a - b) * dir)
     }
     const data = [3, 5, -1, 1]
-    const result = [-1, 1, 3, 5]
-    assert.deepEqual(data.sortIntegers(), result)
+    assert.deepEqual(data.sortIntegers(), [-1, 1, 3, 5])
+    assert.deepEqual(data.sortIntegers(-1), [5, 3, 1, -1])
   },
 
   sumAll() {
@@ -60,6 +60,8 @@ const POLYFILLS = {
       for (let i = 0; i < this.length; ++i) n = lcm2(this[i], n)
       return n
     }
+    assert.deepEqual([36, 8, 16].gcd(), 4)
+    assert.deepEqual([44, 5, 63].lcm(), 13860)
   },
 
   reduceBlock() {
@@ -199,6 +201,70 @@ const POLYFILLS = {
       return this.match(/[a-zA-Z]+/g)
     }
     assert.deepEqual('10R5L5R'.getLetters(), ['R', 'L', 'R'])
+  },
+
+  getAllIndex() {
+    String.prototype.getAllIndex = function (search) {
+      const result = []
+      let i = this.indexOf(search)
+
+      while (i >= 0) {
+        result.push(i)
+        i = this.indexOf(search, i + 1)
+      }
+
+      return result
+    }
+    Array.prototype.getAllIndex = String.prototype.getAllIndex
+    assert.deepEqual('10R5L5R'.getAllIndex('R'), [2, 6])
+    assert.deepEqual('10R5L5R'.split('').getAllIndex('R'), [2, 6])
+  },
+
+  rotateClockwise() {
+    Array.prototype.rotateClockwise = function () {
+      return this[0].map((_, i) => this.map((row) => row[i]).reverse())
+    }
+    assert.deepEqual(
+      [
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9],
+      ].rotateClockwise(),
+      [
+        [7, 4, 1],
+        [8, 5, 2],
+        [9, 6, 3],
+      ]
+    )
+  },
+
+  rotateCounterClockwise() {
+    Array.prototype.rotateCounterClockwise = function () {
+      return this[0].map((_, i) => this.map((row) => row[row.length - 1 - i]))
+    }
+    assert.deepEqual(
+      [
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9],
+      ].rotateCounterClockwise(),
+      [
+        [3, 6, 9],
+        [2, 5, 8],
+        [1, 4, 7],
+      ]
+    )
+  },
+
+  replaceAt() {
+    String.prototype.replaceAt = function (index, replacement) {
+      return (
+        this.substring(0, index) +
+        replacement +
+        this.substring(index + replacement.length)
+      )
+    }
+    assert.deepEqual('abc'.replaceAt(1, 'z'), 'azc')
   },
 }
 

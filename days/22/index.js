@@ -1,163 +1,168 @@
 import assert from 'assert'
 import read from '../../utils/read.js'
 
-const DIRS = ['E', 'S', 'W', 'N']
-const DIR = [...DIRS]
-const WALK = {
-  E: ([y, x]) => [y, x + 1],
-  S: ([y, x]) => [y + 1, x],
-  W: ([y, x]) => [y, x - 1],
-  N: ([y, x]) => [y - 1, x],
-}
-const FOLD = {
-  E: (map, [y]) => [y, map[y].findIndex((c) => c)],
-  S: (map, [, x]) => [map.findIndex((l) => l[x]), x],
-  W: (map, [y]) => [y, map[y].length - 1],
-  N: (map, [, x]) => [
-    map.length -
-      map
-        .slice()
-        .reverse()
-        .findIndex((l) => l[x]) -
-      1,
-    x,
-  ],
-}
-const TURN = {
-  R: () => DIR.push(DIR.shift()),
-  L: () => DIR.unshift(DIR.pop()),
+function getMovingIndex(start, end) {
+  for (let i = 0; i < start.length; i++) {
+    if (start[i] !== end[i]) {
+      return i
+    }
+  }
+  return -1
 }
 
 function parseInput(list) {
-  const splitIdx = list.findIndex((line) => !line)
-  const map = list
-    .slice(0, splitIdx)
-    .map((line) => line.split('').map((n) => n.trim() || undefined))
-  const [directions] = list.slice(splitIdx + 1)
-  const turns = directions.getLetters()
-  const steps = directions.getNumbers().reduce((acc, curr, i) => {
-    const addStep = [...acc, curr]
-    if (turns[i]) addStep.push(turns[i])
-    return addStep
-  }, [])
-  const X = map[0].indexOf('.')
+  return list.reduce((acc, line) => {
+    const [start, end] = line.split('~').map((n) => n.split(',').toNumber())
+    const idx = getMovingIndex(start, end)
 
-  return { map, steps, directions, X, turns }
+    if (idx === -1) {
+      return [...acc, [start]]
+    }
+
+    const delta = end[idx] - start[idx]
+    const blocks = [].nMatrix(delta + 1).map(() => [...start])
+
+    for (let i = 0; i < blocks.length; i++) {
+      blocks[i][idx] += i
+    }
+
+    return [...acc, blocks]
+  }, [])
+}
+
+function sortBlocks(a, b) {
+  const [, , az] = a[0]
+  const [, , bz] = b[0]
+
+  return az - bz
+}
+
+/**
+ * Converts a flattened key to a xyz 2D matrix key
+ *
+ * from '1,2,3,4,5,6' to [[1,2,3],[4,5,6]]
+ */
+function parseFlattenedKey(key) {
+  return key
+    .split(',')
+    .toNumber()
+    .reduce((acc, n) => {
+      if (acc.length === 0) return [[n]]
+
+      const last = acc[acc.length - 1]
+
+      if (last.length === 3) return [...acc, [n]]
+
+      return [...acc.slice(0, -1), [...last, n]]
+    }, [])
+}
+
+function calculateZIndex({ map, block, count = 1 }) {
+  const [zMin, zMax] = [block[0][2], block[block.length - 1][2]]
+  const delta = zMax - zMin
+
+  if (map[block] && map[block].below.length) {
+    return calculateZIndex({
+      map,
+      block: map[block].below[0],
+      count: count + delta + 1,
+    })
+  }
+
+  return count + delta
+}
+
+function getXYZMap(blocks) {
+  return blocks.reduce((map, block) => {
+    const positioned = Object.keys(map).map(parseFlattenedKey)
+    let maxZIndex = 1
+    const below = positioned
+      .filter((underBlock) => {
+        return underBlock.some(([ux, uy]) => {
+          return block.some(([bx, by]) => {
+            return ux === bx && uy === by
+          })
+        })
+      })
+      .sort((a, b) => map[b].zIndex - map[a].zIndex)
+      .filter((underBlock) => {
+        maxZIndex = Math.max(maxZIndex, map[underBlock].zIndex)
+
+        return map[underBlock].zIndex === maxZIndex
+      })
+    const flatBlock = block.flat2DMatrix().join()
+    const updateAbove = below.reduce((acc, underBlock) => {
+      return {
+        ...acc,
+        [underBlock]: {
+          ...acc[underBlock],
+          above: [...acc[underBlock].above, flatBlock],
+        },
+      }
+    }, map)
+    const localMap = { ...updateAbove, [flatBlock]: { below, above: [] } }
+
+    localMap[block].zIndex = calculateZIndex({ map: localMap, block })
+
+    return localMap
+  }, {})
 }
 
 function solution01(list) {
-  const { map, steps, X } = parseInput(list)
-  let current = [0, X]
+  const blocks = parseInput(list).sort(sortBlocks)
+  const xyzMap = getXYZMap(blocks)
 
-  steps.forEach((step) => {
-    if (typeof step === 'number') {
-      for (let i = 0; i < step; i++) {
-        const [dir] = DIR
-        const [ny, nx] = WALK[dir](current)
+  return Object.values(xyzMap).reduce((acc, { above }) => {
+    if (!above.length) return acc + 1
 
-        if (!map[ny] || !map[ny][nx]) {
-          const [fy, fx] = FOLD[dir](map, current)
+    const willFall = above.some((aboveBlock) => {
+      return xyzMap[aboveBlock].below.length < 2
+    })
 
-          if (map[fy][fx] === '.') {
-            current = [fy, fx]
-          } else {
-            break
-          }
-        } else if (map[ny][nx] === '.') {
-          current = [ny, nx]
-        } else {
-          break
-        }
-      }
-    } else {
-      TURN[step]()
-    }
-  })
-
-  const [y, x] = current
-
-  return 1000 * (y + 1) + 4 * (x + 1) + DIRS.indexOf(DIR[0])
+    return willFall ? acc : acc + 1
+  }, 0)
 }
 
-const FOLD_CUBE = {
-  E: ([y, x]) => {
-    if ((y >= 0 && y < 50) || (y >= 100 && y < 150)) {
-      return [149 - y, 248 - x, ['R', 'R']]
-    }
-    if (y >= 50 && y < 100) {
-      return [49, 50 + y, ['L']]
-    }
-    return [149, y - 100, ['L']]
-  },
-  S: ([, x]) => {
-    if (x >= 0 && x < 50) {
-      return [0, 100 + x, []]
-    }
-    if (x >= 50 && x < 100) {
-      return [100 + x, 49, ['R']]
-    }
-    return [x - 50, 99, ['R']]
-  },
-  W: ([y, x]) => {
-    if ((y >= 0 && y < 50) || (y >= 100 && y < 150)) {
-      return [149 - y, 50 - x, ['R', 'R']]
-    }
-    if (y >= 50 && y < 100) {
-      return [100, y - 50, ['L']]
-    }
-    return [0, y - 100, ['L']]
-  },
-  N: ([, x]) => {
-    if (x >= 0 && x < 50) {
-      return [50 + x, 50, ['R']]
-    }
-    if (x >= 50 && x < 100) {
-      return [100 + x, 0, ['R']]
-    }
-    return [199, x - 100, []]
-  },
+function countBlocksAbove({ map, above, set = new Set() }) {
+  if (!above.length) return set
+
+  above.forEach((aboveBlock) => {
+    const { above: aboveAbove } = map[aboveBlock]
+
+    set.add(aboveBlock)
+    countBlocksAbove({ map, above: aboveAbove, set })
+  })
+
+  return set
 }
 
 function solution02(list) {
-  const { map, steps, X } = parseInput(list)
-  let current = [0, X]
+  const blocks = parseInput(list).sort(sortBlocks)
+  const xyzMap = getXYZMap(blocks)
 
-  steps.forEach((step) => {
-    if (typeof step === 'number') {
-      for (let i = 0; i < step; i++) {
-        const [dir] = DIR
-        const [ny, nx] = WALK[dir](current)
+  return Object.values(xyzMap).reduce((acc, { above }) => {
+    if (!above.length) return acc
 
-        if (!map[ny] || !map[ny][nx]) {
-          const [fy, fx, turns] = FOLD_CUBE[dir](current)
+    const willFall = above.some((aboveBlock) => {
+      return xyzMap[aboveBlock].below.length < 2
+    })
 
-          if (map[fy][fx] === '.') {
-            current = [fy, fx]
-            turns.forEach((t) => TURN[t]())
-          } else {
-            break
-          }
-        } else if (map[ny][nx] === '.') {
-          current = [ny, nx]
-        } else {
-          break
-        }
-      }
-    } else {
-      TURN[step]()
+    if (willFall) {
+      const blocksAbove = countBlocksAbove({ map: xyzMap, above })
+
+      return acc + blocksAbove.size
     }
-  })
 
-  const [y, x] = current
-
-  return 1000 * (y + 1) + 4 * (x + 1) + DIRS.indexOf(DIR[0])
+    return acc
+  }, 0)
 }
 
 read('test.txt').then((list) => {
-  assert.deepEqual(solution01(list), 6032)
+  // assert.deepEqual(solution01(list), 5)
+  assert.deepEqual(solution02(list), 7)
 })
 
 read('input.txt').then((list) => {
-  assert.deepEqual(solution01(list), 31568)
-  assert.deepEqual(solution02(list), 36540)
+  // assert.deepEqual(solution01(list), 515)
+  assert.deepEqual(solution02(list), 114230)
 })

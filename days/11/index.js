@@ -1,110 +1,53 @@
 import assert from 'assert'
 import read from '../../utils/read.js'
 
-const START_PREFIX = '  Starting items:'
-const OP_PREFIX = '  Operation: new = '
-const TEST_PREFIX = '  Test: divisible by '
-const TRUE_PREFIX = '    If true: throw to monkey '
-const FALSE_PREFIX = '    If false: throw to monkey '
-
-const OPERATIONS = {
-  '+': (x, y) => x + y,
-  '*': (x, y) => x * y,
-}
-
-function parseMonkeyBusiness(list) {
-  let monkeyIdx
-  return list.reduce((acc, line) => {
-    if (line.startsWith('Monkey')) {
-      // Define Monkey object
-      monkeyIdx = line.match(/[0-9]+/g).pop()
-      acc[monkeyIdx] = { seen: 0 }
-    } else if (line.startsWith(START_PREFIX)) {
-      // parse monkey items
-      acc[monkeyIdx].items = line.match(/[0-9]+/g).toNumber()
-    } else if (line.startsWith(OP_PREFIX)) {
-      // define operation function
-      const opStr = line.replace(OP_PREFIX, '')
-      const [x, op, y] = opStr.match(/[^\s"']+|"([^"]*)"|'([^']*)'/g)
-      const param = (p, old) => (p === 'old' ? old : parseInt(p, 10))
-
-      acc[monkeyIdx].operation = (old) =>
-        OPERATIONS[op](param(x, old), param(y, old))
-    } else if (line.startsWith(TEST_PREFIX)) {
-      // Save divisibleBy check
-      acc[monkeyIdx].divisibleBy = line.replace(TEST_PREFIX, '')
-    } else if (line.startsWith(TRUE_PREFIX)) {
-      // Throw-to-monkey index when condition is true
-      acc[monkeyIdx].trueMonkey = line.replace(TRUE_PREFIX, '')
-    } else if (line.startsWith(FALSE_PREFIX)) {
-      // Throw-to-monkey index when condition is false
-      acc[monkeyIdx].falseMonkey = line.replace(FALSE_PREFIX, '')
-    }
-    return acc
+function getGalaxies(universe) {
+  return universe.reduce((acc, row, y) => {
+    return [...acc, ...row.getAllIndex('#').map((x) => [y, x])]
   }, [])
 }
 
-function doMonkeyBusiness({ monkeyData, rounds, naivety }) {
-  const superModulo = monkeyData.map((m) => m.divisibleBy).multiplyAll()
-
-  return rounds
-    .reduce(
-      (group) => {
-        // run each round
-        return group.map((monkey) => {
-          const newSeen = monkey.items.reduce((seen, worry) => {
-            // worry operation can go big
-            const newWorry = naivety(monkey.operation(worry))
-            const noWorry = newWorry % superModulo
-            const monkeyIdx =
-              noWorry % monkey.divisibleBy === 0
-                ? monkey.trueMonkey
-                : monkey.falseMonkey
-            group[monkeyIdx].items.push(noWorry)
-            return seen + 1
-          }, 0)
-          // monkey has seen and thrown all items
-          // eslint-disable-next-line no-param-reassign
-          monkey.items = []
-          return {
-            ...monkey,
-            // Run each turn
-            seen: monkey.seen + newSeen,
-          }
-        })
-      },
-      [...monkeyData]
-    )
-    .map((monkey) => monkey.seen)
-    .sortIntegers(-1)
-    .filter((n, i) => i < 2)
-    .multiplyAll()
+function getEmptyCoords(universe) {
+  return universe
+    .map((row, i) => (row.includes('#') ? -1 : i))
+    .filter((i) => i >= 0)
 }
 
-function solution01(list) {
-  const monkeyData = parseMonkeyBusiness(list)
-  return doMonkeyBusiness({
-    monkeyData,
-    rounds: [].nMatrix(20),
-    naivety: (worry) => Math.floor(worry / 3),
-  })
+function getEmptySpace(empty, d1, d2, expansion) {
+  return empty
+    .map((d) => {
+      if (d1 < d2 && d1 < d && d < d2) return expansion - 1
+      if (d1 > d2 && d1 > d && d > d2) return 1 - expansion
+      return 0
+    })
+    .filter((d) => d !== 0)
+    .sumAll()
 }
 
-function solution02(list) {
-  const monkeyData = parseMonkeyBusiness(list)
-  return doMonkeyBusiness({
-    monkeyData,
-    rounds: [].nMatrix(10000),
-    naivety: (worry) => worry,
-  })
+function solution(list, expansion) {
+  const universe = list.map((row) => row.split(''))
+  const galaxies = getGalaxies(universe)
+  const emptyY = getEmptyCoords(universe)
+  const emptyX = getEmptyCoords(universe.rotateClockwise())
+
+  return galaxies.reduce((acc, [y1, x1], i) => {
+    const distancesSum = galaxies.slice(i).reduce((sum, [y2, x2]) => {
+      const eY = getEmptySpace(emptyY, y1, y2, expansion)
+      const eX = getEmptySpace(emptyX, x1, x2, expansion)
+
+      return sum + Math.abs(y1 - y2 - eY) + Math.abs(x1 - x2 - eX)
+    }, 0)
+
+    return acc + distancesSum
+  }, 0)
 }
 
 read('test.txt').then((list) => {
-  assert.deepEqual(solution01(list), 10605)
-  assert.deepEqual(solution02(list), 2713310158)
+  assert.deepEqual(solution(list, 2), 374)
+  assert.deepEqual(solution(list, 100), 8410)
 })
 
 read('input.txt').then((list) => {
-  assert.deepEqual(solution01(list), 55216)
-  assert.deepEqual(solution02(list), 12848882750)
+  assert.deepEqual(solution(list, 2), 9734203)
+  assert.deepEqual(solution(list, 1000000), 568914596391)
 })

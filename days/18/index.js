@@ -1,85 +1,76 @@
 import assert from 'assert'
 import read from '../../utils/read.js'
 
-const ADJACENT = [
-  [-1, 0, 0],
-  [1, 0, 0],
-  [0, -1, 0],
-  [0, 1, 0],
-  [0, 0, -1],
-  [0, 0, 1],
-]
+const DIR = {
+  U: [-1, 0],
+  L: [0, -1],
+  D: [1, 0],
+  R: [0, 1],
+}
 
-function getLava(list) {
-  const positions = list.map((line) => line.split(',').toNumber())
-  const lava = positions.map(([x, y, z]) => [x + 1, y + 1, z + 1])
-  const maxX = Math.max(...lava.map(([x]) => x)) + 1
-  const maxY = Math.max(...lava.map(([, y]) => y)) + 1
-  const maxZ = Math.max(...lava.map(([, , z]) => z)) + 1
-  const space = []
-    .range(maxX + 1)
-    .map(() =>
-      [].range(maxY + 1).map(() => [].range(maxZ + 1).map(() => false))
-    )
-  lava.forEach(([x, y, z]) => {
-    space[x][y][z] = true
+const HEX_DIR = ['R', 'D', 'L', 'U']
+
+function getPolygonPoints(list) {
+  let lastPoint = [0, 0]
+
+  return list.map((line) => {
+    const [dir, steps] = line.split(' ')
+    const [y, x] = lastPoint
+    const [dy, dx] = DIR[dir]
+    const [ny, nx] = [y + dy * steps, x + dx * steps]
+
+    lastPoint = [ny, nx]
+
+    return [ny, nx]
   })
+}
 
-  return { lava, space, maxX, maxY, maxZ }
+function getPolygonArea(points) {
+  const shoeLace2 = points.reduce((acc, [y, x], i) => {
+    const [ny, nx] = points[i + 1] || points[0]
+    // Apply shoelace formula
+    return acc + (ny * x - y * nx)
+  }, 0)
+
+  return Math.abs(shoeLace2 / 2)
+}
+
+function getPolygonPerimeter(points) {
+  const perimeter = points.reduce((acc, [y, x], i) => {
+    const [ny, nx] = points[i + 1] || points[0]
+    // Apply shoelace formula
+    return acc + Math.sqrt((ny - y) ** 2 + (nx - x) ** 2)
+  }, 0)
+
+  return (perimeter + 2) / 2
 }
 
 function solution01(list) {
-  const { lava, space } = getLava(list)
+  const polygonPoints = getPolygonPoints(list)
 
-  return lava.reduce((acc, [x, y, z]) => {
-    return ADJACENT.reduce((acc1, [dx, dy, dz]) => {
-      if (!space[x + dx][y + dy][z + dz]) {
-        return acc1 + 1
-      }
-      return acc1
-    }, acc)
-  }, 0)
+  return getPolygonArea(polygonPoints) + getPolygonPerimeter(polygonPoints)
 }
 
 function solution02(list) {
-  const { space, maxX, maxY, maxZ } = getLava(list)
-  const visited = space.map((slice) => slice.map((row) => row.map(() => false)))
-  const queue = [[0, 0, 0]]
-  let sides = 0
+  const newList = list.map((line) => {
+    const [, , hex] = line.split(' ')
+    const hexValue = hex.replace('(#', '').replace(')', '')
+    const decimal = parseInt(hexValue.slice(0, 5), 16)
+    const dir = HEX_DIR[hexValue.slice(5, 6)]
 
-  while (queue.length > 0) {
-    const [x, y, z] = queue.pop()
+    return `${dir} ${decimal}`
+  })
+  const polygonPoints = getPolygonPoints(newList)
 
-    if (!visited[x][y][z]) {
-      visited[x][y][z] = true
-
-      // eslint-disable-next-line no-loop-func
-      ADJACENT.forEach(([dx, dy, dz]) => {
-        const [xp, yp, zp] = [x, y, z].sumNMatrix([dx, dy, dz])
-
-        if (xp < 0 || yp < 0 || zp < 0 || xp > maxX || yp > maxY || zp > maxZ) {
-          return
-        }
-
-        if (space[xp][yp][zp]) {
-          sides++
-          return
-        }
-
-        queue.push([xp, yp, zp])
-      })
-    }
-  }
-
-  return sides
+  return getPolygonArea(polygonPoints) + getPolygonPerimeter(polygonPoints)
 }
 
 read('test.txt').then((list) => {
-  assert.deepEqual(solution01(list), 64)
-  assert.deepEqual(solution02(list), 58)
+  assert.deepEqual(solution01(list), 62)
+  assert.deepEqual(solution02(list), 952408144115)
 })
 
 read('input.txt').then((list) => {
-  assert.deepEqual(solution01(list), 4580)
-  assert.deepEqual(solution02(list), 2610)
+  assert.deepEqual(solution01(list), 49578)
+  assert.deepEqual(solution02(list), 52885384955882)
 })
