@@ -1,60 +1,47 @@
 import assert from 'assert'
 import read from '../../utils/read.js'
 
-const NUM = [
-  'zero',
-  'one',
-  'two',
-  'three',
-  'four',
-  'five',
-  'six',
-  'seven',
-  'eight',
-  'nine',
-]
+function getSeparateLists(list) {
+  return list.reduce(
+    (acc, curr) => {
+      const [n1, n2] = curr.split(/\s+/).map(Number)
+      const [acc1, acc2] = acc
 
-const DIG = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ...NUM]
+      return [
+        [...acc1, n1],
+        [...acc2, n2],
+      ]
+    },
+    [[], []]
+  )
+}
 
 function solution01(list) {
-  return list.reduce((acc, curr) => {
-    const digits = curr.replace(/[^0-9]/g, '')
+  const [list1, list2] = getSeparateLists(list)
 
-    return acc + Number(digits[0] + digits[digits.length - 1])
+  list1.sort()
+  list2.sort()
+
+  return list1.reduce((acc, curr, i) => {
+    return acc + Math.abs(curr - list2[i])
   }, 0)
 }
 
-function getNumber(n) {
-  if (NUM.includes(n)) return NUM.indexOf(n)
-
-  return Number(n)
-}
-
 function solution02(list) {
-  return list.reduce((acc, curr) => {
-    const digits = DIG.map((n) => ({ n, i: curr.getAllIndex(n) }))
-      .filter(({ i }) => i.length > 0)
-      .reduce((result, { n, i }) => {
-        return [...result, ...i.map((idx) => ({ n, i: idx }))]
-      }, [])
-      .sort((a, b) => a.i - b.i)
-      .map(({ n }) => getNumber(n))
+  const [list1, list2] = getSeparateLists(list)
 
-    const final = Number(`${digits[0]}${digits[digits.length - 1]}`)
-
-    return acc + final
+  return list1.reduce((acc, curr1) => {
+    const similarity = curr1 * list2.filter((curr2) => curr1 === curr2).length
+    return acc + similarity
   }, 0)
 }
 
 read('test.txt').then((list) => {
-  assert.deepEqual(solution01(list), 142)
-})
-
-read('test2.txt').then((list) => {
-  assert.deepEqual(solution02(list), 281)
+  assert.deepEqual(solution01(list), 11)
+  assert.deepEqual(solution02(list), 31)
 })
 
 read('input.txt').then((list) => {
-  assert.deepEqual(solution01(list), 57346)
-  assert.deepEqual(solution02(list), 57345)
+  assert.deepEqual(solution01(list), 1603498)
+  assert.deepEqual(solution02(list), 25574739)
 })
