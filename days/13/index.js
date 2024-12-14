@@ -39,8 +39,11 @@ function parseInput(list, offset = 0) {
 
 function solution(list, offset) {
   return parseInput(list, offset).reduce((acc, { A, B, prize }) => {
-    const a = (prize[1] * B[0] - prize[0] * B[1]) / (A[1] * B[0] - B[1] * A[0])
-    const b = (prize[0] - a * A[0]) / B[0]
+    const [Ax, Ay] = A
+    const [Bx, By] = B
+    const [Px, Py] = prize
+    const a = (Py * Bx - Px * By) / (Ay * Bx - By * Ax)
+    const b = (Px - a * Ax) / Bx
 
     if (!Number.isInteger(a) || !Number.isInteger(b)) return acc
 
@@ -51,6 +54,7 @@ function solution(list, offset) {
 function solution01(list) {
   return solution(list)
 }
+
 function solution02(list) {
   return solution(list, 10000000000000)
 }
