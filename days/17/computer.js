@@ -1,22 +1,22 @@
 /* eslint-disable no-bitwise */
 
 class Computer {
-  #A = 0
+  #A
 
-  #B = 0
+  #B
 
-  #C = 0
+  #C
 
-  #program = []
+  #program
 
   #pointer = 0
 
   #output = []
 
   constructor({ A, B, C, program }) {
-    this.#A = A
-    this.#B = B
-    this.#C = C
+    this.#A = BigInt(A)
+    this.#B = BigInt(B)
+    this.#C = BigInt(C)
     this.#program = program
   }
 
@@ -29,7 +29,7 @@ class Computer {
     else if (this.#instruction === 1) this.#bxl(op)
     else if (this.#instruction === 2) this.#bst(op)
     else if (this.#instruction === 3) this.#jnz(op)
-    else if (this.#instruction === 4) this.#bxc()
+    else if (this.#instruction === 4) this.#bxc(op)
     else if (this.#instruction === 5) this.#out(op)
     else if (this.#instruction === 6) this.#bdv(op)
     else if (this.#instruction === 7) this.#cdv(op)
@@ -43,7 +43,7 @@ class Computer {
     if (op === 5) return this.#B
     if (op === 6) return this.#C
 
-    return op
+    return BigInt(op)
   }
 
   /**
@@ -55,7 +55,7 @@ class Computer {
    * is truncated to an integer and then written to the A register.
    */
   #adv(op) {
-    this.#A = Math.trunc(this.#A / 2 ** this.#getOperand(op))
+    this.#A /= 2n ** this.#getOperand(op)
   }
 
   /**
@@ -64,7 +64,7 @@ class Computer {
    * the instruction's literal operand, then stores the result in register B.
    */
   #bxl(op) {
-    this.#B ^= op
+    this.#B ^= BigInt(op)
   }
 
   /**
@@ -74,7 +74,7 @@ class Computer {
    * to the B register.
    */
   #bst(op) {
-    this.#B = this.#getOperand(op) % 8
+    this.#B = this.#getOperand(op) % 8n
   }
 
   /**
@@ -85,7 +85,7 @@ class Computer {
    * pointer is not increased by 2 after this instruction.
    */
   #jnz(op) {
-    if (this.#A === 0) return
+    if (this.#A === 0n) return
 
     this.#pointer = op - 2
   }
@@ -107,7 +107,7 @@ class Computer {
    * they are separated by commas.)
    */
   #out(op) {
-    this.#output.push(this.#getOperand(op) % 8)
+    this.#output.push(this.#getOperand(op) % 8n)
   }
 
   /**
@@ -117,7 +117,7 @@ class Computer {
    * from the A register.)
    */
   #bdv(op) {
-    this.#B = Math.trunc(this.#A / 2 ** this.#getOperand(op))
+    this.#B = this.#A / 2n ** this.#getOperand(op)
   }
 
   /**
@@ -127,7 +127,7 @@ class Computer {
    * from the A register.)
    */
   #cdv(op) {
-    this.#C = Math.trunc(this.#A / 2 ** this.#getOperand(op))
+    this.#C = this.#A / 2n ** this.#getOperand(op)
   }
 
   run() {

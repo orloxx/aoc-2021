@@ -22,14 +22,28 @@ function solution01(list) {
 function solution02(list) {
   const input = parseInput(list)
   const { program } = input
+  const ops = BigInt(program.length - 1)
 
   let computer
-  let A = 100000
+  let output
+  let bit = 1n
+  let A = 8n ** ops - 8n ** (ops - bit)
 
   do {
-    A++
+    A += 8n ** (ops - bit)
     computer = new Computer({ ...input, A })
-  } while (computer.run() !== program.join())
+    output = computer.run()
+
+    const outputArr = output.split(',').map(Number)
+
+    for (let i = outputArr.length - 1; i >= 0; i--) {
+      if (outputArr[i] !== program[i]) {
+        bit = BigInt(outputArr.length - i)
+        if (bit > ops) bit = ops
+        break
+      }
+    }
+  } while (output !== program.join())
 
   return A
 }
@@ -44,5 +58,5 @@ read('test02.txt').then((list) => {
 
 read('input.txt').then((list) => {
   assert.deepEqual(solution01(list), '5,1,3,4,3,7,2,1,7')
-  // assert.deepEqual(solution02(list), 7083)
+  assert.deepEqual(solution02(list), 216584205979245)
 })
