@@ -14,6 +14,12 @@ export function printGrid(grid) {
   console.log(grid.map((row) => row.join('')).join('\n'))
 }
 
+/**
+ * Creates a tree of possible paths an object can move in a 2D grid.
+ * It doesn't take into account diagonal movements or the object's initial position.
+ * @param grid {string<typeof OBJ[string]>[][]} - The 2d grid where the object can move.
+ * @returns {{[key: string]: string[]}} - A tree of possible paths.
+ */
 export function treeFromGrid(grid) {
   return grid.reduce((acc, row, y) => {
     row.forEach((cell, x) => {
