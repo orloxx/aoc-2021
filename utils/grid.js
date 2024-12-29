@@ -36,7 +36,7 @@ export function treeFromGrid(grid, options = OBJ) {
 
           const neighbor = grid[ny]?.[nx]
 
-          return neighbor !== options.wall ? [ny, nx].join() : null
+          return neighbor && neighbor !== options.wall ? [ny, nx].join() : null
         })
         .filter(Boolean)
     })

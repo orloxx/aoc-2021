@@ -1,14 +1,7 @@
 import assert from 'assert'
 import read from '../../utils/read.js'
-import { OBJ, treeFromGrid } from '../../utils/grid.js'
+import { DIR, OBJ, treeFromGrid } from '../../utils/grid.js'
 import bfs from '../../utils/bfs.js'
-
-const DIRS = {
-  up: [-1, 0],
-  down: [1, 0],
-  left: [0, -1],
-  right: [0, 1],
-}
 
 function parseInput(list) {
   return list.reduce(
@@ -31,7 +24,7 @@ function parseInput(list) {
 function scanCheats({ grid, position, visited }) {
   const [y, x] = position
 
-  return Object.values(DIRS)
+  return Object.values(DIR)
     .map(([dy, dx]) => {
       const [ny, nx] = [y + dy, x + dx]
       const [nny, nnx] = [ny + dy, nx + dx]
